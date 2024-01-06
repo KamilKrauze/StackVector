@@ -1,4 +1,6 @@
 # Stack Allocated Vector
+> Visit the [wiki](https://github.com/KamilKrauze/StackVector/wiki) for more information
+
 A very similar and easy replacement where required of <b>``std::vector<class T>``</b> data structure, the key difference being the data is dynicamically allocated on the stack, resulting in being cache-coherent.
 
 Normally, for general use-cases dynamic stack allocation should be avoided as it may result code being unsafe.
