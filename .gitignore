@@ -1,6 +1,7 @@
 # Directories
-./.vs/
-./src/obj/
+/.vs/
+/src/obj/
+/bin/
 
 # Prerequisites
 *.d
