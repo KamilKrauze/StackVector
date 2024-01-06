@@ -1,7 +1,7 @@
 #include<iostream>
 #include <string>
 
-#include "stack_vector.h"
+#include "stack_vector.hpp"
 
 int main() {
 	stack_vector<short> foo;
