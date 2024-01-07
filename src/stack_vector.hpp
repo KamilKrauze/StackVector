@@ -3,6 +3,7 @@
 
 #include <initializer_list>
 #include <optional>
+#include <exception>
 
 // Dynamic stack allocated vector
 template<typename T>
@@ -28,8 +29,8 @@ public:
 	T pop_back();
 	void append(stack_vector<T>& vec);
 
-	T front();
-	T back();
+	T front() const;
+	T back() const;
 	T at(size_t index) const;
 	
 	size_t size() const { return m_size; }
@@ -58,7 +59,7 @@ public:
 
 /* Members */
 private:
-	T* m_values; // Points to an array of values. Will be stack allocated, so no manual deletion needed.
+	T* m_values; // Points to an array of values.
 	size_t m_size; // Size of stack vector.
 	size_t m_capacity; // Total memory allocated by m_values.
 
@@ -95,6 +96,7 @@ inline stack_vector<T>::stack_vector(std::initializer_list<T> init_list) : m_siz
 template<typename T>
 inline stack_vector<T>::~stack_vector()
 {
+	_freea(m_values);
 	m_size = NULL;
 	m_capacity = NULL;
 }
@@ -120,6 +122,7 @@ inline void stack_vector<T>::push_back(T value)
 	// Update size
 	this->m_size = newsize;
 	update_capacity();
+	_freea(temp_vals);
 }
 
 // Get and remove last value from vector.
@@ -128,6 +131,11 @@ inline T stack_vector<T>::pop_back()
 {
 	if (m_size <= 0) { 
 		throw std::out_of_range("stack_vector is empty!"); 
+		return T();
+	}
+
+	if (m_values == nullptr) {
+		throw std::runtime_error("Array is nullptr");
 		return T();
 	}
 	
@@ -144,6 +152,7 @@ inline T stack_vector<T>::pop_back()
 
 	m_size--;
 	update_capacity();
+	_freea(new_values);
 
 	return val;
 }
@@ -171,18 +180,19 @@ inline void stack_vector<T>::append(stack_vector<T>& vec)
 
 	m_size = newsize;
 	update_capacity();
+	_freea(temp);
 }
 
 // Get copy of first value.
 template<typename T>
-inline T stack_vector<T>::front()
+inline T stack_vector<T>::front() const
 {
 	return m_values[0];
 }
 
 // Get copy of last value.
 template<typename T>
-inline T stack_vector<T>::back()
+inline T stack_vector<T>::back() const
 {
 	return m_values[m_size-1];
 }
@@ -198,7 +208,7 @@ template<typename T>
 inline void stack_vector<T>::clear()
 {
 	this->m_size = 0;
-	this->m_values = __DYN_STACK_ALLOC(this->m_size);
+	_freea(this->m_values);
 	update_capacity();
 }
 
@@ -224,6 +234,7 @@ inline void stack_vector<T>::resize(size_t size)
 
 	this->m_size = size;
 	update_capacity();
+	_freea(temp_vals);
 }
 
 	// Is the array empty?
