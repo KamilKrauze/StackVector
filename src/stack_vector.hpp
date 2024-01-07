@@ -20,6 +20,9 @@ public:
 	~stack_vector();
 
 	/* Functions */
+private: 
+	inline void update_capacity() { this->m_capacity = sizeof(T) * m_size; }
+
 public:
 	void push_back(T value);
 	T pop_back();
@@ -69,6 +72,7 @@ inline stack_vector<T>::stack_vector()
 	// Point to stack array.
 	m_values = nullptr;
 	m_size = 0;
+	update_capacity();
 }
 
 // Allocate array on stack with size.
@@ -78,18 +82,21 @@ inline stack_vector<T>::stack_vector(size_t size)
 	// Point to stack array.
 	m_values = __DYN_STACK_ALLOC(m_size-1);
 	m_size = size;
+	update_capacity();
 }
 
 template<typename T>
 inline stack_vector<T>::stack_vector(std::initializer_list<T> init_list) : m_size(init_list.size()) {
 	m_values = __DYN_STACK_ALLOC(init_list.size());
 	std::copy(init_list.begin(), init_list.end(), m_values);
+	update_capacity();
 }
 
 template<typename T>
 inline stack_vector<T>::~stack_vector()
 {
 	m_size = NULL;
+	m_capacity = NULL;
 }
 
 // Add new value to the end of the array.
@@ -98,25 +105,21 @@ inline void stack_vector<T>::push_back(T value)
 {
 	size_t newsize = m_size + 1;
 
-	T* temp_vals = new T[newsize];
-	for (size_t i = 0; i < newsize - 1; i++) {
+	// Copy existing elements
+	T* temp_vals = __DYN_STACK_ALLOC(newsize);
+	for (size_t i = 0; i < m_size; i++) {
 		temp_vals[i] = m_values[i];
 	}
-	temp_vals[newsize - 1] = value; // Add new value to the end
 
-	// Create new stack array
-	this->m_values = __DYN_STACK_ALLOC(newsize);
-	
-	// Re-calculate size and memory allocation size.
+	// Reconstruct new array
+	m_values = temp_vals;
+
+	// Add new element to end
+	m_values[m_size] = value;
+
+	// Update size
 	this->m_size = newsize;
-	this->m_capacity = sizeof(T) * this->m_size;
-
-	// Copy values over
-	// Avoids from pointing to heap allocated memory.
-	for (size_t i = 0; i < newsize; i++) {
-		m_values[i] = temp_vals[i];
-	}
-	delete temp_vals;
+	update_capacity();
 }
 
 // Get and remove last value from vector.
@@ -125,24 +128,22 @@ inline T stack_vector<T>::pop_back()
 {
 	if (m_size <= 0) { 
 		throw std::out_of_range("stack_vector is empty!"); 
-		return NULL;
+		return T();
 	}
 	
 	// Copy last value.
 	T val = m_values[m_size - 1];
 
 	// Copy all values but last 
-	T* new_values = new T[m_size-1];
+	T* new_values = __DYN_STACK_ALLOC(m_size-1);
 	for (size_t i = 0; i < m_size-1; i++) {
 		new_values[i] = m_values[i];
 	}
-
-	for (size_t i = 0; i < m_size - 1; i++) {
-		m_values[i] = new_values[i];
-	}
-	delete new_values;
+	// Transfer new data back
+	m_values = new_values;
 
 	m_size--;
+	update_capacity();
 
 	return val;
 }
@@ -166,10 +167,10 @@ inline void stack_vector<T>::append(stack_vector<T>& vec)
 	}
 
 	this->m_values = __DYN_STACK_ALLOC(newsize);
-	std::copy(temp, temp + newsize, m_values);
+	this->m_values = temp;
 
 	m_size = newsize;
-	m_capacity = sizeof(T) * m_size;
+	update_capacity();
 }
 
 // Get copy of first value.
@@ -198,6 +199,7 @@ inline void stack_vector<T>::clear()
 {
 	this->m_size = 0;
 	this->m_values = __DYN_STACK_ALLOC(this->m_size);
+	update_capacity();
 }
 
 template<typename T>
@@ -221,9 +223,7 @@ inline void stack_vector<T>::resize(size_t size)
 	}
 
 	this->m_size = size;
-	this->m_capacity = sizeof(T) * size;
-
-	_freea(temp_vals);
+	update_capacity();
 }
 
 	// Is the array empty?
