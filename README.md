@@ -24,6 +24,6 @@ This is platform dependent so here is a quick guide:
 
 > MacOS
 > 
-> I don't own a Mac and have never programmed on Mac, fend for yourselves.
+> I don't own a Mac and have never programmed on Mac, so fend for yourselves.
 
 More information can be found [here](https://premake.github.io/docs/Using-Premake/#using-premake-to-generate-project-files).
