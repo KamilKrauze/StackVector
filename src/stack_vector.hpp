@@ -189,6 +189,9 @@ public:
 	/*						Operator Overload					*/
 	/*----------------------------------------------------------*/
 public:
+	void* operator new(size_t size);
+	void operator delete(void*);
+
 	const T& operator[](const size_t index) const
 	{
 		assert((index >= 0 && index < m_capacity));
