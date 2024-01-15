@@ -2,52 +2,203 @@
 #define STACK_VECTOR_H
 
 #include <initializer_list>
-#include <optional>
-#include <exception>
+#include <cassert>
 
 // Dynamic stack allocated vector
 template<typename T>
 class stack_vector
 {
-/* Macros */
-#define __DYN_STACK_ALLOC(Size) static_cast<T*>(_malloca(Size * sizeof(T)))
 
 	/* Allocation / Deallocation */
 public:
-	stack_vector();
-	stack_vector(size_t size);
-	stack_vector(std::initializer_list<T> init_list);
 
-	~stack_vector();
+	// Allocate array on stack.
+	stack_vector()
+	{
+		this->_reallocate(2);
+	}
 
-	/* Functions */
-private: 
-	inline void update_capacity() { this->m_capacity = sizeof(T) * m_size; }
+	// Allocate array on stack with size.
+	stack_vector(size_t size)
+	{
+		this->_reallocate(size);
+	}
+
+	// Allocate array on stack with a given set of values
+	stack_vector(std::initializer_list<T> init_list)
+	{
+		this->_reallocate(init_list.size());
+		std::copy(init_list.begin(), init_list.end(), m_data);
+		m_size = init_list.size();
+	}
+
+	// DESTROY!
+	~stack_vector()
+	{
+		this->clear();
+
+		_freea(m_data);
+		m_size = NULL;
+		m_capacity = NULL;
+	}
 
 public:
-	void push_back(T value);
-	T pop_back();
-	void append(stack_vector<T>& vec);
 
-	T front() const;
-	T back() const;
-	T at(size_t index) const;
+	/*----------------------------------------------------------*/
+	/*						  Modifiers						    */
+	/*----------------------------------------------------------*/
+
+	void push_back(const T& value)
+	{
+		if (m_size >= m_capacity)
+			this->_reallocate(m_capacity + (m_capacity / 2));
+
+		m_data[m_size] = value;
+		m_size++;
+	}
 	
+	void push_back(T&& value)
+	{
+		if (m_size >= m_capacity)
+			this->_reallocate(m_capacity + (m_capacity / 2));
+
+		m_data[m_size] = std::move(value);
+		m_size++;
+	}
+
+	void pop_back() {
+		if (m_size > 0) {
+			m_size--;
+			m_data[m_size].~T();
+		}
+	}
+
+	void swap(stack_vector<T>& other)
+	{
+		std::swap(m_size, other.m_size);
+		std::swap(m_capacity, other.m_capacity);
+		std::swap(m_data, other.m_data);
+	}
+
+	void swap(stack_vector<T>&& other)
+	{
+		std::swap(m_size, other.m_size);
+		std::swap(m_capacity, other.m_capacity);
+		std::swap(m_data, other.m_data);
+	}
+
+	template<typename... Args>
+	T& emplace_back(Args&&... args) {
+		if (m_size >= m_capacity)
+			this->_reallocate(m_capacity + (m_capacity / 2));
+
+		new(&m_data[m_size]) T(std::forward<Args>(args)...);;
+		return m_data[m_size++];
+	}
+
+	template <typename U = T, typename std::enable_if<std::is_same<U, bool>::value, int>::type = 0>
+	void flip() noexcept
+	{
+		for (size_t i = 0; i < m_size; ++i)
+		{
+			m_data[i] = !m_data[i];  // Flip each boolean
+		}
+	}
+
+	/*----------------------------------------------------------*/
+	/*						Element access						*/
+	/*----------------------------------------------------------*/
+	// Get the first element.
+	T front() const {
+		assert(m_size > 0);
+		return m_data[0];
+	}
+
+
+	// Get the last element.
+	T back() const {
+		assert(m_size > 0);
+		return m_data[m_size - 1];
+	}
+	
+	// Get copy of element at this index.
+	T at(size_t index) const
+	{
+		assert((index >= 0 && index < m_capacity));
+		return m_data[index];
+	}
+
+	// Get array
+	T* data() noexcept
+	{
+		return this->m_data;
+	}
+
+	// Get array copy
+	const T* data() const noexcept
+	{
+		return this->m_data;
+	}
+
+	/*----------------------------------------------------------*/
+	/*						   Capacity						    */
+	/*----------------------------------------------------------*/
+
+	// Get amount of elements.
 	size_t size() const { return m_size; }
+
+	// Get amount of elements that can fit.
 	size_t capacity() const { return m_capacity; }
 
-	// Total memory allocated of the whole object.
-	size_t total_capacity() const { return (sizeof(m_size) + sizeof(m_capacity) + m_capacity); }
+	// Destroy vector contents
+	void clear() {
+		for (size_t i = 0; i < m_size; i++) {
+			m_data[i].~T();
+		}
+		m_size = 0;
+	}
 
-	void clear();
-	void resize(size_t size);
+	// Change size
+	void resize(size_t size, T value = T()) {
+		_reallocate(size);
+		for (size_t i = m_size; i < size; i++)
+			m_data[i] = value;
 
-	bool is_empty() const;
+		m_size = size;
+	}
 
-/* Operator overloads */
+	void reserve(size_t new_capacity)
+	{
+		bool resize = false;
+		(new_capacity > m_capacity) ? (m_capacity = new_capacity) : (resize = true);
+		
+		if (resize) {
+			_reallocate(m_capacity);
+		}
+
+	}
+	
+	// Check if empty
+	bool empty() const { return (this->m_size == 0); }
+
+	/*----------------------------------------------------------*/
+	/*						Operator Overload					*/
+	/*----------------------------------------------------------*/
 public:
+	const T& operator[](const size_t index) const
+	{
+		assert((index >= 0 && index < m_capacity));
+		return this->m_data[index];
+	}
+
+	T& operator[](const size_t index)
+	{
+		assert((index >= 0 && index < m_capacity));
+		return this->m_data[index];
+	}
+
 	stack_vector<T>& operator= (const stack_vector<T>& rhs);
-	T& operator[] (size_t index) { return m_values[index]; }
+	stack_vector<T>& operator= (stack_vector<T>&& rhs);
 	
 	/* Relational */
 	bool operator== (const stack_vector<T> rhs);
@@ -57,210 +208,69 @@ public:
 	bool operator>  (const stack_vector<T> rhs);
 	bool operator>= (const stack_vector<T> rhs);
 
+
+	/* Helper Functions */
+private: 
+
+	inline void stack_vector<T>::_reallocate(const size_t new_capacity)
+	{
+		T* new_data = static_cast<T*>(_malloca(new_capacity * sizeof(T)));
+
+		if (new_capacity < m_size)
+			m_size = new_capacity;
+
+		for (size_t i = 0; i < m_size; i++)
+			new_data[i] = std::move(m_data[i]);
+
+		for (size_t i = 0; i < m_size; i++) {
+			m_data[i].~T();
+		}
+
+		_freea(m_data);
+		m_data = new_data;
+		m_capacity = new_capacity;
+	}
+
+
 /* Members */
-private:
-	T* m_values; // Points to an array of values.
-	size_t m_size; // Size of stack vector.
-	size_t m_capacity; // Total memory allocated by m_values.
+protected:
+	T* m_data = nullptr; // Points to an array of values.
+	size_t m_size = 0; // Size of stack vector.
+	size_t m_capacity = 0; // Total memory allocated by m_data.
 
 }; // !stack_vector<T> class
 
 
-// Allocate array on stack.
-template<typename T>
-inline stack_vector<T>::stack_vector()
-{	
-	// Point to stack array.
-	m_values = nullptr;
-	m_size = 0;
-	update_capacity();
-}
-
-// Allocate array on stack with size.
-template<typename T>
-inline stack_vector<T>::stack_vector(size_t size)
-{
-	// Point to stack array.
-	m_values = __DYN_STACK_ALLOC(m_size-1);
-	m_size = size;
-	update_capacity();
-}
-
-template<typename T>
-inline stack_vector<T>::stack_vector(std::initializer_list<T> init_list) : m_size(init_list.size()) {
-	m_values = __DYN_STACK_ALLOC(init_list.size());
-	std::copy(init_list.begin(), init_list.end(), m_values);
-	update_capacity();
-}
-
-template<typename T>
-inline stack_vector<T>::~stack_vector()
-{
-	_freea(m_values);
-	m_size = NULL;
-	m_capacity = NULL;
-}
-
-// Add new value to the end of the array.
-template<typename T>
-inline void stack_vector<T>::push_back(T value)
-{
-	size_t newsize = m_size + 1;
-
-	// Copy existing elements
-	T* temp_vals = __DYN_STACK_ALLOC(newsize);
-	for (size_t i = 0; i < m_size; i++) {
-		temp_vals[i] = m_values[i];
-	}
-
-	// Reconstruct new array
-	m_values = temp_vals;
-
-	// Add new element to end
-	m_values[m_size] = value;
-
-	// Update size
-	this->m_size = newsize;
-	update_capacity();
-	_freea(temp_vals);
-}
-
-// Get and remove last value from vector.
-template<typename T>
-inline T stack_vector<T>::pop_back()
-{
-	if (m_size <= 0) { 
-		throw std::out_of_range("stack_vector is empty!"); 
-		return T();
-	}
-
-	if (m_values == nullptr) {
-		throw std::runtime_error("Array is nullptr");
-		return T();
-	}
-	
-	// Copy last value.
-	T val = m_values[m_size - 1];
-
-	// Copy all values but last 
-	T* new_values = __DYN_STACK_ALLOC(m_size-1);
-	for (size_t i = 0; i < m_size-1; i++) {
-		new_values[i] = m_values[i];
-	}
-	// Transfer new data back
-	m_values = new_values;
-
-	m_size--;
-	update_capacity();
-	_freea(new_values);
-
-	return val;
-}
-
-// Appends values from passed in vector to the end of this vector.
-template<typename T>
-inline void stack_vector<T>::append(stack_vector<T>& vec)
-{	
-	const size_t vec_size = vec.size();
-	const size_t newsize = m_size + vec_size;
-	T* temp = __DYN_STACK_ALLOC(newsize);
-
-	for (size_t i = 0; i < this->m_size; i++)
-	{
-		temp[i] = m_values[i];	
-	}
-
-	for (size_t i = 0; i < vec_size; i++)
-	{
-		temp[this->m_size + i] = vec[i];
-	}
-
-	this->m_values = __DYN_STACK_ALLOC(newsize);
-	this->m_values = temp;
-
-	m_size = newsize;
-	update_capacity();
-	_freea(temp);
-}
-
-// Get copy of first value.
-template<typename T>
-inline T stack_vector<T>::front() const
-{
-	return m_values[0];
-}
-
-// Get copy of last value.
-template<typename T>
-inline T stack_vector<T>::back() const
-{
-	return m_values[m_size-1];
-}
-
-// Get copy of value at this position.
-template<typename T>
-inline T stack_vector<T>::at(size_t index) const
-{
-	return m_values[index];
-}
-
-template<typename T>
-inline void stack_vector<T>::clear()
-{
-	this->m_size = 0;
-	_freea(this->m_values);
-	update_capacity();
-}
-
-template<typename T>
-inline void stack_vector<T>::resize(size_t size)
-{
-	std::cout << size << "\n";
-
-	// Copy values to temporary variable
-	T* temp_vals = __DYN_STACK_ALLOC(m_size);
-	for (size_t i = 0; i < m_size; i++)
-	{
-		temp_vals[i] = m_values[i];
-	}
-
-	// Reconstruct stack array
-	m_values = __DYN_STACK_ALLOC(size);
-	std::cout << sizeof(m_values) << "\n";
-	for (size_t i = 0; i < m_size; i++)
-	{
-		m_values[i] = temp_vals[i];
-	}
-
-	this->m_size = size;
-	update_capacity();
-	_freea(temp_vals);
-}
-
-	// Is the array empty?
-template<typename T>
-inline bool stack_vector<T>::is_empty() const
-{
-	return (this->m_values == nullptr);
-}
-
 /*------------------------------------------*/
-/* Operator overloads						*/
+/*            Operator overloads			*/
 /*------------------------------------------*/
-
-
 template<typename T>
 inline stack_vector<T>& stack_vector<T>::operator=(const stack_vector<T>& rhs)
 {
 	// Resize array
-	this->m_values = __DYN_STACK_ALLOC(rhs.m_size);
+	this->_reallocate(rhs.m_size);
 	this->m_size = rhs.m_size;
-	this->m_capacity = (sizeof(T) * this->m_size);
 
 	// Move values over
 	for (size_t i = 0; i < this->m_size; i++)
 	{
-		this->m_values[i] = rhs.m_values[i];
+		this->m_data[i] = rhs.m_data[i];
+	}
+
+	return *this;
+}
+
+template<typename T>
+inline stack_vector<T>& stack_vector<T>::operator= (stack_vector<T>&& rhs)
+{
+	// Resize array
+	this->_reallocate(rhs.m_size);
+	this->m_size = rhs.m_size;
+
+	// Move values over
+	for (size_t i = 0; i < this->m_size; i++)
+	{
+		this->m_data[i] = std::move(rhs.m_data[i]);
 	}
 
 	return *this;
@@ -274,7 +284,7 @@ inline bool stack_vector<T>::operator== (const stack_vector<T> rhs)
 
 	for (size_t i = 0; i < this->m_size; i++)
 	{
-		elem_check = (this->m_values[i] == rhs.m_values[i]);
+		elem_check = (this->m_data[i] == rhs.m_data[i]);
 	}
 
 	return (same_size && elem_check);
@@ -288,7 +298,7 @@ inline bool stack_vector<T>::operator!=(const stack_vector<T> rhs)
 
 	for (size_t i = 0; i < this->m_size; i++)
 	{
-		elem_check = (this->m_values[i] != rhs.m_values[i]);
+		elem_check = (this->m_data[i] != rhs.m_data[i]);
 	}
 
 	return (same_size || elem_check);
@@ -302,7 +312,7 @@ inline bool stack_vector<T>::operator<(const stack_vector<T> rhs)
 
 	for (size_t i = 0; i < this->m_size; i++)
 	{
-		elem_check = (this->m_values[i] < rhs.m_values[i]);
+		elem_check = (this->m_data[i] < rhs.m_data[i]);
 	}
 
 	return (same_size || elem_check);
@@ -316,7 +326,7 @@ inline bool stack_vector<T>::operator<=(const stack_vector<T> rhs)
 
 	for (size_t i = 0; i < this->m_size; i++)
 	{
-		elem_check = (this->m_values[i] <= rhs.m_values[i]);
+		elem_check = (this->m_data[i] <= rhs.m_data[i]);
 	}
 
 	return (same_size && elem_check);
@@ -330,7 +340,7 @@ inline bool stack_vector<T>::operator>(const stack_vector<T> rhs)
 
 	for (size_t i = 0; i < this->m_size; i++)
 	{
-		elem_check = (this->m_values[i] > rhs.m_values[i]);
+		elem_check = (this->m_data[i] > rhs.m_data[i]);
 	}
 
 	return (same_size || elem_check);
@@ -344,7 +354,7 @@ inline bool stack_vector<T>::operator>=(const stack_vector<T> rhs)
 
 	for (size_t i = 0; i < this->m_size; i++)
 	{
-		elem_check = (this->m_values[i] >= rhs.m_values[i]);
+		elem_check = (this->m_data[i] >= rhs.m_data[i]);
 	}
 
 	return (same_size && elem_check);
