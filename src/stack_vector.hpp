@@ -66,7 +66,8 @@ public:
 		m_size++;
 	}
 
-	void pop_back() {
+	void pop_back()
+	{
 		if (m_size > 0) {
 			m_size--;
 			m_data[m_size].~T();
@@ -88,7 +89,8 @@ public:
 	}
 
 	template<typename... Args>
-	T& emplace_back(Args&&... args) {
+	T& emplace_back(Args&&... args)
+	{
 		if (m_size >= m_capacity)
 			this->_reallocate(m_capacity + (m_capacity / 2));
 
@@ -151,7 +153,8 @@ public:
 	size_t capacity() const { return m_capacity; }
 
 	// Destroy vector contents
-	void clear() {
+	void clear()
+	{
 		for (size_t i = 0; i < m_size; i++) {
 			m_data[i].~T();
 		}
@@ -159,7 +162,8 @@ public:
 	}
 
 	// Change size
-	void resize(size_t size, T value = T()) {
+	void resize(size_t size, T value = T())
+	{
 		_reallocate(size);
 		for (size_t i = m_size; i < size; i++)
 			m_data[i] = value;
