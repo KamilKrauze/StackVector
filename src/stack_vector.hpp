@@ -224,19 +224,19 @@ public:
 public:
 
 	// Default constructor.
-	stack_vector()
+	inline stack_vector() noexcept
 	{
 		this->_reallocate(2);
 	}
 
 	// Fill constructor
-	explicit stack_vector(size_t size)
+	inline explicit stack_vector(size_t size)
 	{
 		this->_reallocate(size);
 	}
 
 	// Initializer constructor
-	stack_vector(std::initializer_list<T> init_list)
+	inline stack_vector(std::initializer_list<T> init_list)
 	{
 		const size_t new_size = init_list.size();
 		this->_reallocate(new_size);
@@ -245,7 +245,7 @@ public:
 	}
 
 	// Copy constructor
-	stack_vector(const stack_vector<T>& vec)
+	inline stack_vector(const stack_vector<T>& vec)
 	{
 		const size_t new_size = vec.size();
 		this->_reallocate(vec.capacity());
@@ -257,7 +257,7 @@ public:
 	}
 	 
 	// Move constructor
-	stack_vector(stack_vector<T>&& vec)
+	inline stack_vector(stack_vector<T>&& vec) noexcept
 	{
 		const size_t new_size = vec.size();
 		this->_reallocate(vec.capacity());
@@ -294,7 +294,7 @@ public:
 	/*----------------------------------------------------------*/
 
 	// Assign value of n amount
-	void assign(size_t n, const T& val)
+	inline void assign(size_t n, const T& val)
 	{
 		this->_reallocate(m_capacity + n + (m_capacity / 2));
 		m_size = n;
@@ -304,7 +304,7 @@ public:
 	}
 
 	// Assign values by initializer list.
-	void assign(std::initializer_list<T> init_list)
+	inline void assign(std::initializer_list<T> init_list)
 	{
 		const size_t size = init_list.size();
 		this->_reallocate(m_capacity + size + (m_capacity / 2));
@@ -314,7 +314,7 @@ public:
 	}
 
 	// Assign value of n amount, by iterators
-	void assign(const_iterator first, const_iterator last)
+	inline void assign(const_iterator first, const_iterator last)
 	{
 		const size_t size = last.m_ptr - first.m_ptr;
 		this->_reallocate(m_capacity + size + (m_capacity / 2));
@@ -325,7 +325,7 @@ public:
 
 	}
 
-	void push_back(const T& value)
+	inline void push_back(const T& value)
 	{
 		if (m_size >= m_capacity)
 			this->_reallocate(m_capacity + (m_capacity / 2));
@@ -334,7 +334,7 @@ public:
 		m_size++;
 	}
 	
-	void push_back(T&& value)
+	inline void push_back(T&& value)
 	{
 		std::cout << &value << "\n";
 		if (m_size >= m_capacity)
@@ -344,7 +344,7 @@ public:
 		m_size++;
 	}
 
-	void pop_back()
+	inline void pop_back() noexcept
 	{
 		if (m_size > 0) {
 			m_size--;
@@ -353,7 +353,7 @@ public:
 	}
 
 	// Insert element at position.
-	iterator insert(const_iterator position, const T& val)
+	inline iterator insert(const_iterator position, const T& val)
 	{
 		// Calculate the index based on the pointer difference
 		auto* loc = position.m_ptr;
@@ -374,7 +374,7 @@ public:
 	}
 
 	// Insert element n amount of times at defined position.
-	iterator insert(const_iterator position, size_t n, const T& val)
+	inline iterator insert(const_iterator position, size_t n, const T& val)
 	{
 		// Calculate the index based on the pointer difference
 		auto* loc = position.m_ptr;
@@ -397,7 +397,7 @@ public:
 	}
 
 	// Insert element n amount of times at defined position.
-	iterator insert(const_iterator position, size_t n, const T&& val)
+	inline iterator insert(const_iterator position, size_t n, const T&& val)
 	{
 		// Calculate the index based on the pointer difference
 		auto* loc = position.m_ptr;
@@ -420,7 +420,7 @@ public:
 	}
 
 	// Insert element n amount of times at position, with iterators.
-	iterator insert(const_iterator position, const_iterator first, const_iterator last)
+	inline iterator insert(const_iterator position, const_iterator first, const_iterator last)
 	{
 		auto* loc = position.m_ptr;
 		const size_t index = loc - m_data;
@@ -442,7 +442,7 @@ public:
 		return iterator(m_data + index);
 	}
 
-	iterator insert(const_iterator position, std::initializer_list<T> init_list)
+	inline iterator insert(const_iterator position, std::initializer_list<T> init_list)
 	{
 		auto* loc = position.m_ptr;
 		const size_t index = loc - m_data;
@@ -465,7 +465,7 @@ public:
 		return iterator(m_data + index);
 	}
 
-	iterator erase(const_iterator position)
+	inline iterator erase(const_iterator position) noexcept
 	{
 		// Calculate the index based on the pointer difference
 		auto* loc = position.m_ptr;
@@ -482,7 +482,7 @@ public:
 		return iterator(m_data + index);
 	}
 
-	iterator erase(const_iterator first, const_iterator last)
+	inline iterator erase(const_iterator first, const_iterator last) noexcept
 	{
 		// Ensure the range is valid
 		assert(first.m_ptr >= m_data && first.m_ptr <= m_data + m_size);
@@ -506,14 +506,14 @@ public:
 		return iterator(m_data + start_index);
 	}
 
-	void swap(stack_vector<T>& other)
+	inline void swap(stack_vector<T>& other) noexcept
 	{
 		std::swap(m_size, other.m_size);
 		std::swap(m_capacity, other.m_capacity);
 		std::swap(m_data, other.m_data);
 	}
 
-	void swap(stack_vector<T>&& other)
+	inline void swap(stack_vector<T>&& other) noexcept
 	{
 		std::swap(m_size, other.m_size);
 		std::swap(m_capacity, other.m_capacity);
@@ -521,7 +521,7 @@ public:
 	}
 
 	template<typename... Args>
-	iterator emplace(const_iterator position, Args&&... args)
+	inline iterator emplace(const_iterator position, Args&&... args)
 	{
 		// Calculate the index based on the pointer difference
 		auto* loc = position.m_ptr;
@@ -553,7 +553,7 @@ public:
 
 	// Flip each boolean in list.
 	template <typename U = T, typename std::enable_if<std::is_same<U, bool>::value, int>::type = 0>
-	void flip() noexcept
+	inline void flip() noexcept
 	{
 		for (size_t i = 0; i < m_size; ++i)
 		{
@@ -629,22 +629,22 @@ public:
 	/* -------------------------------*/
 	
 	// iterator pointing at the start.
-	iterator begin() noexcept
+	_NODISCARD inline iterator begin() noexcept
 	{
 		return iterator(m_data);
 	}
 	// iterator pointing at the end.
-	iterator end() noexcept
+	_NODISCARD inline iterator end() noexcept
 	{
 		return iterator(m_data + (m_size));
 	}
 	// iterator pointing at the reversed start.
-	iterator rbegin() noexcept
+	_NODISCARD inline iterator rbegin() noexcept
 	{
 		return iterator(m_data + (m_size));
 	}
 	// iterator pointing at the reversed end.
-	iterator rend() noexcept
+	_NODISCARD inline iterator rend() noexcept
 	{
 		return iterator(m_data);
 	}
@@ -654,25 +654,25 @@ public:
 	/* -------------------------------*/
 
 	// const_iterator pointing at the start.
-	const_iterator begin() const noexcept
+	_NODISCARD inline const_iterator begin() const noexcept
 	{
 		return const_iterator(m_data);
 	}
 
 	// const_iterator pointing at the end.
-	const_iterator end() const noexcept
+	_NODISCARD inline const_iterator end() const noexcept
 	{
 		return const_iterator(m_data + (m_size));
 	}
 
 	// const_iterator pointing at the reversed start.
-	const_iterator rbegin() const noexcept
+	_NODISCARD inline const_iterator rbegin() const noexcept
 	{
 		return const_iterator(m_data + (m_size));
 	}
 
 	// const_iterator pointing at the reversed end.
-	const_iterator rend() const noexcept
+	_NODISCARD inline const_iterator rend() const noexcept
 	{
 		return const_iterator(m_data);
 	}
@@ -682,22 +682,22 @@ public:
 	/* -------------------------------*/
 
 	//constant const_iterator pointing at the start.
-	const_iterator cbegin() const noexcept
+	_NODISCARD inline const_iterator cbegin() const noexcept
 	{
 		return const_iterator(m_data);
 	}
 	//constant const_iterator pointing at the end.
-	const_iterator cend() const noexcept
+	_NODISCARD inline const_iterator cend() const noexcept
 	{
 		return const_iterator(m_data + (m_size));
 	}
 	//constant const_iterator pointing at the reversed start.
-	const_iterator crbegin() const noexcept
+	_NODISCARD inline const_iterator crbegin() const noexcept
 	{
 		return const_iterator(m_data + (m_size));
 	}
 	//constant const_iterator pointing at the reversed end.
-	const_iterator crend() const noexcept
+	_NODISCARD inline const_iterator crend() const noexcept
 	{
 		return const_iterator(m_data);
 	}
@@ -707,13 +707,15 @@ public:
 	/*----------------------------------------------------------*/
 
 	// Get amount of elements.
-	size_t size() const noexcept{ return m_size; }
+	_NODISCARD inline size_t size() const noexcept { return m_size; }
+
+	_NODISCARD inline size_t max_size() const noexcept { return std::numeric_limits<size_t>::max() / sizeof(T); }
 
 	// Get amount of elements that can fit.
-	size_t capacity() const noexcept{ return m_capacity; }
+	size_t capacity() const noexcept { return m_capacity; }
 
 	// Destroy vector contents
-	void clear()
+	inline void clear() noexcept
 	{
 		for (size_t i = 0; i < m_size; i++)
 			m_data[i].~T();
@@ -721,7 +723,7 @@ public:
 	}
 
 	// Change size
-	void resize(size_t size, T value = T())
+	inline void resize(size_t size, T value = T())
 	{
 		_reallocate(size);
 		for (size_t i = m_size; i < size; i++)
@@ -731,7 +733,7 @@ public:
 	}
 
 	// Reserve some n-th space, resize array if needed.
-	void reserve(size_t new_capacity)
+	inline void reserve(size_t new_capacity)
 	{
 		bool resize = false;
 		(new_capacity > m_capacity) ? (m_capacity = new_capacity) : (resize = true);
@@ -741,7 +743,7 @@ public:
 	}
 	
 	// Check if empty
-	bool empty() const { return (this->m_size == 0); }
+	_NODISCARD_EMPTY_MEMBER inline bool empty() const { return (this->m_size == 0); }
 
 	void shrink_to_fit() { m_capacity = m_size; }
 
@@ -752,20 +754,20 @@ public:
 	void* operator new(size_t size); // Disable new
 	void operator delete(void*); // Disable delete
 
-	T& operator[](const size_t index)
+	T& operator[](const size_t index) noexcept
 	{
 		assert((index >= 0 && index < m_capacity));
 		return this->m_data[index];
 	}
 
-	const T& operator[](const size_t index) const
+	const T& operator[](const size_t index) const noexcept
 	{
 		assert((index >= 0 && index < m_capacity));
 		return this->m_data[index];
 	}
 	
 	/* Assignment */
-	inline stack_vector<T>& operator=(const stack_vector<T>& rhs)
+	inline stack_vector<T>& operator=(const stack_vector<T>& rhs) noexcept
 	{
 		// Resize array
 		this->_reallocate(rhs.m_size);
