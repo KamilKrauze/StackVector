@@ -39,7 +39,7 @@ struct float3
 };
 
 template<typename T>
-void print(const stack_vector<T>& vec) {
+void print(const sad::stack_vector<T>& vec) {
 	std::cout << "Size: " << vec.size() << "\n";
 	std::cout << "Capacity: " << vec.capacity() << "\n";
 
@@ -50,7 +50,7 @@ void print(const stack_vector<T>& vec) {
 	std::cout << "------------------------------" << std::endl;
 }
 
-void print(const stack_vector<float3>& vec) {
+void print(const sad::stack_vector<float3>& vec) {
 	std::cout << "Size: " << vec.size() << "\n";
 	std::cout << "Capacity: " << vec.capacity() << "\n";
 
@@ -62,7 +62,7 @@ void print(const stack_vector<float3>& vec) {
 
 int main() {
 
-	stack_vector<float3> foo;
+	sad::stack_vector<float3> foo;
 	foo.assign(3, float3(100));
 	print(foo);
 	
