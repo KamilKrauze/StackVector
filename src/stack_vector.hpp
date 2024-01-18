@@ -116,7 +116,7 @@ public:
 	using PointerType = ValueType*;
 	using ReferenceType = ValueType&;
 public:
-	iterator() : m_ptr() {}
+	iterator() { m_ptr = nullptr; }
 	iterator(PointerType ptr) { this->m_ptr = ptr; }
 
 	ReferenceType operator[](const size_t index) const noexcept { return *(m_ptr[index]); }
@@ -217,30 +217,64 @@ class stack_vector
 {
 public:
 	using ValueType = T;
-	using Iterator = iterator<stack_vector<T>>;
-	using ConstIterator = const_iterator<stack_vector<T>>;
+	using iterator = iterator<stack_vector<T>>;
+	using const_iterator = const_iterator<stack_vector<T>>;
 
 	/* Allocation / Deallocation */
 public:
 
-	// Allocate array on stack.
+	// Default constructor.
 	stack_vector()
 	{
 		this->_reallocate(2);
 	}
 
-	// Allocate array on stack with size.
-	stack_vector(size_t size)
+	// Fill constructor
+	explicit stack_vector(size_t size)
 	{
 		this->_reallocate(size);
 	}
 
-	// Allocate array on stack with a given set of values
+	// Initializer constructor
 	stack_vector(std::initializer_list<T> init_list)
 	{
-		this->_reallocate(init_list.size());
+		const size_t new_size = init_list.size();
+		this->_reallocate(new_size);
 		std::copy(init_list.begin(), init_list.end(), m_data);
-		m_size = init_list.size();
+		m_size = new_size;
+	}
+
+	// Copy constructor
+	stack_vector(const stack_vector<T>& vec)
+	{
+		const size_t new_size = vec.size();
+		this->_reallocate(vec.capacity());
+
+		for (size_t i = 0; i < new_size; i++)
+			m_data[i] = vec.m_data[i];
+
+		m_size = new_size;
+	}
+	 
+	// Move constructor
+	stack_vector(stack_vector<T>&& vec)
+	{
+		const size_t new_size = vec.size();
+		this->_reallocate(vec.capacity());
+
+		for (size_t i = 0; i < new_size; i++)
+			m_data[i] = vec.m_data[i];
+
+		m_size = new_size;
+	}
+
+	// Range constructor
+	stack_vector(iterator first, iterator last)
+	{
+		size_t size = last.m_ptr - first.m_ptr;
+		this->_reallocate(size);
+		m_size = size;
+		std::copy(first.m_ptr, last.m_ptr, m_data);
 	}
 
 	// DESTROY!
@@ -258,6 +292,37 @@ public:
 	/*----------------------------------------------------------*/
 	/*						  Modifiers						    */
 	/*----------------------------------------------------------*/
+
+	// Assign value of n amount
+	void assign(size_t n, const T& val)
+	{
+		this->_reallocate(m_capacity + n + (m_capacity / 2));
+
+		for (size_t i = 0; i < n; i++)
+			m_data[i] = T(val);
+	}
+
+	// Assign values by initializer list.
+	void assign(std::initializer_list<T> init_list)
+	{
+		const size_t size = init_list.size();
+		this->_reallocate(m_capacity + size + (m_capacity / 2));
+		m_size = size;
+
+		std::copy(init_list.begin(), init_list.end(), m_data);
+	}
+
+	// Assign value of n amount, by iterators
+	void assign(const_iterator first, const_iterator last)
+	{
+		const size_t size = last.m_ptr - first.m_ptr;
+		this->_reallocate(m_capacity + size + (m_capacity / 2));
+		m_size = size;
+
+		for (size_t i = 0; i < m_size; i++)
+			m_data[i] = T(*(first + i));
+
+	}
 
 	void push_back(const T& value)
 	{
@@ -285,6 +350,160 @@ public:
 		}
 	}
 
+	// Insert element at position.
+	iterator insert(const_iterator position, const T& val)
+	{
+		// Calculate the index based on the pointer difference
+		auto* loc = position.m_ptr;
+		size_t index = loc - m_data;
+
+		if (m_size >= m_capacity) {
+			this->_reallocate(m_capacity + (m_capacity / 2));
+		}
+		m_size++;
+
+		// Shift elements to make space for the new one
+		for (size_t i = m_size; i > index; --i)
+			m_data[i] = std::move(m_data[i - 1]);
+
+		m_data[index] = T(val);
+
+		return iterator(m_data + index);
+	}
+
+	// Insert element n amount of times at defined position.
+	iterator insert(const_iterator position, size_t n, const T& val)
+	{
+		// Calculate the index based on the pointer difference
+		auto* loc = position.m_ptr;
+		const size_t index = loc - m_data;
+
+		if (m_size >= m_capacity) {
+			this->_reallocate(m_capacity + n + (m_capacity / 2) );
+		}
+		m_size+=n;
+
+		// Shift elements to make space for the new one
+		for (size_t i = m_size; i > index; --i)
+			m_data[i] = std::move(m_data[i - n]);
+
+		// Add the values n amount of times.
+		for (size_t i = index; i < index+n; ++i)
+			m_data[i] = std::move(val);
+
+		return iterator(m_data + index);
+	}
+
+	// Insert element n amount of times at defined position.
+	iterator insert(const_iterator position, size_t n, const T&& val)
+	{
+		// Calculate the index based on the pointer difference
+		auto* loc = position.m_ptr;
+		const size_t index = loc - m_data;
+
+		if (m_size >= m_capacity) {
+			this->_reallocate(m_capacity + n + (m_capacity / 2));
+		}
+		m_size += n;
+
+		// Shift elements to make space for the new one
+		for (size_t i = m_size; i > index; --i)
+			m_data[i] = std::move(m_data[i - n]);
+
+		// Add the values n amount of times.
+		for (size_t i = index; i < index + n; ++i)
+			m_data[i] = std::move(val);
+
+		return iterator(m_data + index);
+	}
+
+	// Insert element n amount of times at position, with iterators.
+	iterator insert(const_iterator position, const_iterator first, const_iterator last)
+	{
+		auto* loc = position.m_ptr;
+		const size_t index = loc - m_data;
+		const size_t n = last.m_ptr - first.m_ptr;
+
+		if (m_size >= m_capacity) {
+			this->_reallocate(m_capacity + n + (m_capacity / 2));
+		}
+		m_size += n;
+		
+		// Shift elements by n-spaces, to make space for the new one
+		for (size_t i = m_size; i > n; --i)
+			m_data[i] = std::move(m_data[i - n]);
+
+		// Add the values n-amount of times.
+		for (size_t i = index+1; i < index + n; ++i)
+			m_data[i] = T(first.m_ptr[i]);
+
+		return iterator(m_data + index);
+	}
+
+	iterator insert(const_iterator position, std::initializer_list<T> init_list)
+	{
+		auto* loc = position.m_ptr;
+		const size_t index = loc - m_data;
+		const size_t n = init_list.size();
+
+		if (m_size >= m_capacity) {
+			this->_reallocate(m_capacity + n + (m_capacity / 2));
+		}
+		m_size += n;
+
+		// Shift elements by n-spaces, to make space for the new one
+		for (size_t i = m_size; i > n; --i)
+			m_data[i] = std::move(m_data[i - n]);
+
+		// Add the values n-amount of times.
+		auto it = init_list.begin();
+		for (size_t i = 0; i < n; ++i, ++it)
+			new (&m_data[index + i]) T(*it);
+
+		return iterator(m_data + index);
+	}
+
+	iterator erase(const_iterator position)
+	{
+		// Calculate the index based on the pointer difference
+		auto* loc = position.m_ptr;
+		size_t index = loc - m_data;
+		
+		// Delete element at location
+		m_data[index].~T();
+		m_size--;
+
+		// Shift elements to compensate for removed element
+		for (size_t i = index; i < m_size; i++)
+			m_data[i] = std::move(m_data[i + 1]);
+
+		return iterator(m_data + index);
+	}
+
+	iterator erase(const_iterator first, const_iterator last)
+	{
+		// Ensure the range is valid
+		assert(first.m_ptr >= m_data && first.m_ptr <= m_data + m_size);
+		assert(last.m_ptr >= m_data && last.m_ptr <= m_data + m_size);
+		assert(first.m_ptr <= last.m_ptr);
+
+		const size_t start_index = first.m_ptr - m_data;
+		const size_t end_index = last.m_ptr - m_data;
+		const size_t n = last.m_ptr - first.m_ptr;
+		
+		// Destroy elements at these indices
+		for (size_t i = start_index; i < end_index; ++i)
+			m_data[i].~T();
+		
+		// Shift elements after the erased range to fill the gap
+		for (size_t i = end_index; i < m_size; ++i)
+			m_data[i - n] = std::move(m_data[i]);
+
+		m_size -= n;
+
+		return iterator(m_data + start_index);
+	}
+
 	void swap(stack_vector<T>& other)
 	{
 		std::swap(m_size, other.m_size);
@@ -300,7 +519,7 @@ public:
 	}
 
 	template<typename... Args>
-	Iterator emplace(ConstIterator position, Args&&... args)
+	iterator emplace(const_iterator position, Args&&... args)
 	{
 		// Calculate the index based on the pointer difference
 		auto* loc = position.m_ptr;
@@ -317,7 +536,7 @@ public:
 
 		m_data[index] = T(std::forward<Args>(args)...);
 
-		return Iterator(m_data + index);
+		return iterator(m_data + index);
 	}
 
 	template<typename... Args>
@@ -343,23 +562,47 @@ public:
 	/*						Element access						*/
 	/*----------------------------------------------------------*/
 	// Get the first element.
-	T front() const {
+
+	// Get copy of element at this index.
+	_NODISCARD inline T at(const size_t index)
+	{
+		assert((index >= 0 && index < m_capacity));
+		return m_data[index];
+	}
+
+	// Get copy of element at this index as const.
+	_NODISCARD inline const T at(const size_t index) const
+	{
+		assert((index >= 0 && index < m_capacity));
+		return m_data[index];
+	}
+
+	// Get the first element.
+	_NODISCARD inline T& front()
+	{
 		assert(m_size > 0);
 		return m_data[0];
 	}
 
+	// Get the first element as const.
+	_NODISCARD inline const T& front() const
+	{
+		assert(m_size > 0);
+		return m_data[0];
+	}
 
 	// Get the last element.
-	T back() const {
+	_NODISCARD inline T& back()
+	{
 		assert(m_size > 0);
 		return m_data[m_size - 1];
 	}
-	
-	// Get copy of element at this index.
-	T at(size_t index) const
+
+	// Get the last element as const.
+	_NODISCARD inline const T& back() const
 	{
-		assert((index >= 0 && index < m_capacity));
-		return m_data[index];
+		assert(m_size > 0);
+		return m_data[m_size - 1];
 	}
 
 	// Get array
@@ -378,44 +621,82 @@ public:
 	/*						Iterators							*/
 	/*----------------------------------------------------------*/
 
-	Iterator begin()
+	/* -------------------------------*/
+	/*	    iterator iterators	      */
+	/* -------------------------------*/
+	
+	// iterator pointing at the start.
+	iterator begin() noexcept
 	{
-		return Iterator(m_data);
+		return iterator(m_data);
+	}
+	// iterator pointing at the end.
+	iterator end() noexcept
+	{
+		return iterator(m_data + (m_size));
+	}
+	// iterator pointing at the reversed start.
+	iterator rbegin() noexcept
+	{
+		return iterator(m_data + (m_size));
+	}
+	// iterator pointing at the reversed end.
+	iterator rend() noexcept
+	{
+		return iterator(m_data);
 	}
 
-	Iterator end()
+	/* -------------------------------*/
+	/*	  const_iterator iterators	  */
+	/* -------------------------------*/
+
+	// const_iterator pointing at the start.
+	const_iterator begin() const noexcept
 	{
-		return Iterator(m_data + (m_size));
+		return const_iterator(m_data);
 	}
 
-	Iterator rbegin()
+	// const_iterator pointing at the end.
+	const_iterator end() const noexcept
 	{
-		return Iterator(m_data + (m_size));
+		return const_iterator(m_data + (m_size));
 	}
 
-	Iterator rend()
+	// const_iterator pointing at the reversed start.
+	const_iterator rbegin() const noexcept
 	{
-		return Iterator(m_data);
+		return const_iterator(m_data + (m_size));
 	}
 
-	ConstIterator begin() const
+	// const_iterator pointing at the reversed end.
+	const_iterator rend() const noexcept
 	{
-		return ConstIterator(m_data);
+		return const_iterator(m_data);
 	}
 
-	ConstIterator end() const
-	{
-		return ConstIterator(m_data + (m_size));
-	}
+	/* -------------------------------*/
+	/* Const const_iterator iterators */
+	/* -------------------------------*/
 
-	ConstIterator rbegin() const
+	//constant const_iterator pointing at the start.
+	const_iterator cbegin() const noexcept
 	{
-		return ConstIterator(m_data + (m_size));
+		return const_iterator(m_data);
 	}
-
-	ConstIterator rend() const
+	//constant const_iterator pointing at the end.
+	const_iterator cend() const noexcept
 	{
-		return ConstIterator(m_data);
+		return const_iterator(m_data + (m_size));
+	}
+	//constant const_iterator pointing at the reversed start.
+	const_iterator crbegin() const noexcept
+	{
+		return const_iterator(m_data + (m_size));
+	}
+	//constant const_iterator pointing at the reversed end.
+	const_iterator crend() const noexcept
+	{
+		return const_iterator(m_data);
 	}
 
 	/*----------------------------------------------------------*/
@@ -423,10 +704,10 @@ public:
 	/*----------------------------------------------------------*/
 
 	// Get amount of elements.
-	size_t size() const { return m_size; }
+	size_t size() const noexcept{ return m_size; }
 
 	// Get amount of elements that can fit.
-	size_t capacity() const { return m_capacity; }
+	size_t capacity() const noexcept{ return m_capacity; }
 
 	// Destroy vector contents
 	void clear()
@@ -447,6 +728,7 @@ public:
 		m_size = size;
 	}
 
+	// Reserve some n-th space, resize array if needed.
 	void reserve(size_t new_capacity)
 	{
 		bool resize = false;
@@ -461,18 +743,14 @@ public:
 	// Check if empty
 	bool empty() const { return (this->m_size == 0); }
 
+	void shrink_to_fit() { m_capacity = m_size; }
+
 	/*----------------------------------------------------------*/
 	/*						Operator Overload					*/
 	/*----------------------------------------------------------*/
 public:
-	void* operator new(size_t size);
-	void operator delete(void*);
-
-	const T& operator[](const size_t index) const
-	{
-		assert((index >= 0 && index < m_capacity));
-		return this->m_data[index];
-	}
+	void* operator new(size_t size); // Disable new
+	void operator delete(void*); // Disable delete
 
 	T& operator[](const size_t index)
 	{
@@ -480,16 +758,121 @@ public:
 		return this->m_data[index];
 	}
 
-	stack_vector<T>& operator= (const stack_vector<T>& rhs);
-	stack_vector<T>& operator= (stack_vector<T>&& rhs);
+	const T& operator[](const size_t index) const
+	{
+		assert((index >= 0 && index < m_capacity));
+		return this->m_data[index];
+	}
 	
+	/* Assignment */
+	inline stack_vector<T>& operator=(const stack_vector<T>& rhs)
+	{
+		// Resize array
+		this->_reallocate(rhs.m_size);
+		this->m_size = rhs.m_size;
+
+		// Move values over
+		for (size_t i = 0; i < this->m_size; i++)
+		{
+			this->m_data[i] = rhs.m_data[i];
+		}
+
+		return *this;
+	}
+
+	inline stack_vector<T>& operator= (stack_vector<T>&& rhs)
+	{
+		// Resize array
+		this->_reallocate(rhs.m_size);
+		this->m_size = rhs.m_size;
+
+		// Move values over
+		for (size_t i = 0; i < this->m_size; i++)
+		{
+			this->m_data[i] = std::move(rhs.m_data[i]);
+		}
+
+		return *this;
+	}
+
 	/* Relational */
-	_NODISCARD bool operator== (const stack_vector<T> rhs);
-	_NODISCARD bool operator!= (const stack_vector<T> rhs);
-	_NODISCARD bool operator<  (const stack_vector<T> rhs);
-	_NODISCARD bool operator<= (const stack_vector<T> rhs);
-	_NODISCARD bool operator>  (const stack_vector<T> rhs);
-	_NODISCARD bool operator>= (const stack_vector<T> rhs);
+	inline bool operator== (const stack_vector<T> rhs)
+	{
+		bool same_size = (this->m_size == rhs.m_size); // Check if both vectors are of the same size.
+		bool elem_check = false;
+
+		for (size_t i = 0; i < this->m_size; i++)
+		{
+			elem_check = (this->m_data[i] == rhs.m_data[i]);
+		}
+
+		return (same_size && elem_check);
+	}
+
+	inline bool operator!=(const stack_vector<T> rhs)
+	{
+		bool same_size = (this->m_size != rhs.m_size); // Check if both vectors are not of the same size.
+		bool elem_check = false;
+
+		for (size_t i = 0; i < this->m_size; i++)
+		{
+			elem_check = (this->m_data[i] != rhs.m_data[i]);
+		}
+
+		return (same_size || elem_check);
+	}
+
+	inline bool operator<(const stack_vector<T> rhs)
+	{
+		bool same_size = (this->m_size < rhs.m_size); // Check if right vector is larger.
+		bool elem_check = false;
+
+		for (size_t i = 0; i < this->m_size; i++)
+		{
+			elem_check = (this->m_data[i] < rhs.m_data[i]);
+		}
+
+		return (same_size || elem_check);
+	}
+
+	inline bool operator<=(const stack_vector<T> rhs)
+	{
+		bool same_size = (this->m_size <= rhs.m_size); // Check if right vector is larger or equal.
+		bool elem_check = false;
+
+		for (size_t i = 0; i < this->m_size; i++)
+		{
+			elem_check = (this->m_data[i] <= rhs.m_data[i]);
+		}
+
+		return (same_size && elem_check);
+	}
+
+	inline bool operator>(const stack_vector<T> rhs)
+	{
+		bool same_size = (this->m_size > rhs.m_size); // Check if right vector is smaller.
+		bool elem_check = false;
+
+		for (size_t i = 0; i < this->m_size; i++)
+		{
+			elem_check = (this->m_data[i] > rhs.m_data[i]);
+		}
+
+		return (same_size || elem_check);
+	}
+
+	inline bool operator>=(const stack_vector<T> rhs)
+	{
+		bool same_size = (this->m_size >= rhs.m_size); // Check if right vector is smaller or equal.
+		bool elem_check = false;
+
+		for (size_t i = 0; i < this->m_size; i++)
+		{
+			elem_check = (this->m_data[i] >= rhs.m_data[i]);
+		}
+
+		return (same_size && elem_check);
+	}
 
 
 	/* Helper Functions */
@@ -527,120 +910,6 @@ protected:
 /*------------------------------------------*/
 /*            Operator overloads			*/
 /*------------------------------------------*/
-template<typename T>
-inline stack_vector<T>& stack_vector<T>::operator=(const stack_vector<T>& rhs)
-{
-	// Resize array
-	this->_reallocate(rhs.m_size);
-	this->m_size = rhs.m_size;
 
-	// Move values over
-	for (size_t i = 0; i < this->m_size; i++)
-	{
-		this->m_data[i] = rhs.m_data[i];
-	}
-
-	return *this;
-}
-
-template<typename T>
-inline stack_vector<T>& stack_vector<T>::operator= (stack_vector<T>&& rhs)
-{
-	// Resize array
-	this->_reallocate(rhs.m_size);
-	this->m_size = rhs.m_size;
-
-	// Move values over
-	for (size_t i = 0; i < this->m_size; i++)
-	{
-		this->m_data[i] = std::move(rhs.m_data[i]);
-	}
-
-	return *this;
-}
-
-template<typename T>
-inline bool stack_vector<T>::operator== (const stack_vector<T> rhs)
-{
-	bool same_size = (this->m_size == rhs.m_size); // Check if both vectors are of the same size.
-	bool elem_check = false;
-
-	for (size_t i = 0; i < this->m_size; i++)
-	{
-		elem_check = (this->m_data[i] == rhs.m_data[i]);
-	}
-
-	return (same_size && elem_check);
-}
-
-template<typename T>
-inline bool stack_vector<T>::operator!=(const stack_vector<T> rhs)
-{
-	bool same_size = (this->m_size != rhs.m_size); // Check if both vectors are not of the same size.
-	bool elem_check = false;
-
-	for (size_t i = 0; i < this->m_size; i++)
-	{
-		elem_check = (this->m_data[i] != rhs.m_data[i]);
-	}
-
-	return (same_size || elem_check);
-}
-
-template<typename T>
-inline bool stack_vector<T>::operator<(const stack_vector<T> rhs)
-{
-	bool same_size = (this->m_size < rhs.m_size); // Check if right vector is larger.
-	bool elem_check = false;
-
-	for (size_t i = 0; i < this->m_size; i++)
-	{
-		elem_check = (this->m_data[i] < rhs.m_data[i]);
-	}
-
-	return (same_size || elem_check);
-}
-
-template<typename T>
-inline bool stack_vector<T>::operator<=(const stack_vector<T> rhs)
-{
-	bool same_size = (this->m_size <= rhs.m_size); // Check if right vector is larger or equal.
-	bool elem_check = false;
-
-	for (size_t i = 0; i < this->m_size; i++)
-	{
-		elem_check = (this->m_data[i] <= rhs.m_data[i]);
-	}
-
-	return (same_size && elem_check);
-}
-
-template<typename T>
-inline bool stack_vector<T>::operator>(const stack_vector<T> rhs)
-{
-	bool same_size = (this->m_size > rhs.m_size); // Check if right vector is smaller.
-	bool elem_check = false;
-
-	for (size_t i = 0; i < this->m_size; i++)
-	{
-		elem_check = (this->m_data[i] > rhs.m_data[i]);
-	}
-
-	return (same_size || elem_check);
-}
-
-template<typename T>
-inline bool stack_vector<T>::operator>=(const stack_vector<T> rhs)
-{
-	bool same_size = (this->m_size >= rhs.m_size); // Check if right vector is smaller or equal.
-	bool elem_check = false;
-
-	for (size_t i = 0; i < this->m_size; i++)
-	{
-		elem_check = (this->m_data[i] >= rhs.m_data[i]);
-	}
-
-	return (same_size && elem_check);
-}
 
 #endif
