@@ -297,6 +297,7 @@ public:
 	void assign(size_t n, const T& val)
 	{
 		this->_reallocate(m_capacity + n + (m_capacity / 2));
+		m_size = n;
 
 		for (size_t i = 0; i < n; i++)
 			m_data[i] = T(val);
@@ -335,6 +336,7 @@ public:
 	
 	void push_back(T&& value)
 	{
+		std::cout << &value << "\n";
 		if (m_size >= m_capacity)
 			this->_reallocate(m_capacity + (m_capacity / 2));
 
@@ -549,12 +551,13 @@ public:
 		m_size++;
 	}
 
+	// Flip each boolean in list.
 	template <typename U = T, typename std::enable_if<std::is_same<U, bool>::value, int>::type = 0>
 	void flip() noexcept
 	{
 		for (size_t i = 0; i < m_size; ++i)
 		{
-			m_data[i] = !m_data[i];  // Flip each boolean
+			m_data[i] = !m_data[i];
 		}
 	}
 
@@ -712,9 +715,8 @@ public:
 	// Destroy vector contents
 	void clear()
 	{
-		for (size_t i = 0; i < m_size; i++) {
+		for (size_t i = 0; i < m_size; i++)
 			m_data[i].~T();
-		}
 		m_size = 0;
 	}
 
@@ -734,10 +736,8 @@ public:
 		bool resize = false;
 		(new_capacity > m_capacity) ? (m_capacity = new_capacity) : (resize = true);
 		
-		if (resize) {
+		if (resize)
 			_reallocate(m_capacity);
-		}
-
 	}
 	
 	// Check if empty
@@ -882,6 +882,7 @@ private:
 	{
 
 		T* new_data = static_cast<T*>(_alloca(new_capacity * sizeof(T)));
+		//T* new_data = new T[new_capacity * sizeof(T)];
 
 		if (new_capacity < m_size)
 			m_size = new_capacity;
@@ -905,11 +906,5 @@ protected:
 	size_t m_capacity = 0; // Total memory allocated by m_data.
 
 }; // !stack_vector<T> class
-
-
-/*------------------------------------------*/
-/*            Operator overloads			*/
-/*------------------------------------------*/
-
 
 #endif
