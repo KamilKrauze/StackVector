@@ -86,11 +86,14 @@ int main() {
 	//a.swap(b);
 	//print(b);
 
+
 	stack_vector<int> glee = { 0,1,2,3,4,5,6,7,8,9 };
-	for (auto& var : glee)
-	{
-		std::cout << var << std::endl;
-	}
+	auto it = glee.begin().m_ptr;
+
+	glee.emplace(glee.begin() + 1, 100);
+	glee.emplace(glee.begin() + 4, 100);
+	glee.emplace(glee.begin()+9, 100);
+	print(glee);
 
 	std::cin.get();
 

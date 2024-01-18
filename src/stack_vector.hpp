@@ -1,7 +1,6 @@
 #ifndef STACK_VECTOR_H
 #define STACK_VECTOR_H
 
-#include <malloc.h>
 #include <initializer_list>
 #include <cassert>
 
@@ -15,7 +14,7 @@ public:
 
 public:
 	inline const_iterator() noexcept : m_ptr() {}
-	inline const_iterator(PointerType ptr) noexcept : m_ptr(ptr) {}
+	inline const_iterator(PointerType ptr) noexcept : m_ptr(ptr) { }
 
 	_NODISCARD inline ReferenceType operator[](const size_t index) const noexcept { return *(m_ptr[index]); }
 	_NODISCARD inline PointerType operator->() const noexcept { return m_ptr; }
@@ -30,7 +29,7 @@ public:
 	}
 	inline const_iterator operator++(int) noexcept
 	{
-		iterator temp = *this;
+		const_iterator temp = *this;
 		++(*this);
 		return temp;
 	}
@@ -41,7 +40,7 @@ public:
 	}
 	inline const_iterator operator--(int) noexcept
 	{
-		iterator temp = *this;
+		const_iterator temp = *this;
 		--(*this);
 		return temp;
 	}
@@ -56,8 +55,8 @@ public:
 
 	_NODISCARD inline const_iterator operator+(const size_t val) const noexcept {
 		const_iterator temp = *this;
-		_Tmp += val;
-		return _Tmp;
+		temp += val;
+		return temp;
 	}
 
 	inline const_iterator& operator-=(const size_t val) noexcept
@@ -68,38 +67,38 @@ public:
 
 	_NODISCARD inline const_iterator operator-(const size_t val) const noexcept {
 		const_iterator temp = *this;
-		_Tmp -= val;
-		return _Tmp;
+		temp -= val;
+		return temp;
 	}
 
 	/* RELATIONAL OPERATORS */
 
-	bool operator==(const const_iterator& other) const
+	bool operator==(const const_iterator& other) const noexcept
 	{
 		return m_ptr == other.m_ptr;
 	}
 
-	bool operator!=(const const_iterator& other) const
+	bool operator!=(const const_iterator& other) const noexcept
 	{
 		return !(*this == other);
 	}
 
-	bool operator>=(const const_iterator& other) const
+	bool operator>=(const const_iterator& other) const noexcept
 	{
 		return m_ptr >= other.m_ptr;
 	}
 
-	bool operator<=(const const_iterator& other) const
+	bool operator<=(const const_iterator& other) const noexcept
 	{
 		return m_ptr <= other.m_ptr;
 	}
 
-	bool operator>(const const_iterator& other) const
+	bool operator>(const const_iterator& other) const noexcept
 	{
 		return m_ptr > other.m_ptr;
 	}
 
-	bool operator<(const const_iterator& other) const
+	bool operator<(const const_iterator& other) const noexcept
 	{
 		return m_ptr < other.m_ptr;
 	}
@@ -117,57 +116,68 @@ public:
 	using PointerType = ValueType*;
 	using ReferenceType = ValueType&;
 public:
-	inline iterator() : m_ptr() {}
-	inline iterator(PointerType ptr) : m_ptr(ptr) {}
+	iterator() : m_ptr() {}
+	iterator(PointerType ptr) { this->m_ptr = ptr; }
 
-	iterator& operator++()
+	ReferenceType operator[](const size_t index) const noexcept { return *(m_ptr[index]); }
+	PointerType operator->() { return m_ptr; }
+	ReferenceType operator*() { return *m_ptr; }
+
+	/* Addition / Subtraction */
+
+	inline iterator& operator++() noexcept
 	{
 		m_ptr++;
 		return *this;
 	}
 
-	iterator operator++(int)
+	inline iterator operator++(int) noexcept
 	{
 		iterator temp = *this;
 		++(*this);
 		return temp;
 	}
 
-	iterator& operator--()
+	inline iterator& operator--() noexcept
 	{
 		m_ptr--;
 		return *this;
 	}
 
-	iterator operator--(int)
+	inline iterator operator--(int) noexcept
 	{
 		iterator temp = *this;
 		--(*this);
 		return temp;
 	}
 
-	iterator& operator+=(const size_t val)
+	inline iterator& operator+=(const size_t val) noexcept
 	{
 		m_ptr += val;
 		return *this;
 	}
 
-	iterator& operator-=(const size_t val)
+	_NODISCARD inline iterator& operator+(const size_t val) const noexcept
+	{
+		iterator temp = *this;
+		temp += val;
+		return temp;
+	}
+
+	inline iterator& operator-=(const size_t val)
 	{
 		m_ptr -= val;
 		return *this;
 	}
 
-	//iterator operarator-(const size_t val)
-	//{
-	//	iterator temp = *this;
-	//	temp -= val;
-	//	return temp;
-	//}
+	_NODISCARD inline iterator& operator-(const size_t val) const noexcept
+	{
+		iterator temp = *this;
+		temp -= val;
+		return temp;
+	}
 
-	ReferenceType operator[](const size_t index) { return *(m_ptr[index]); }
-	PointerType operator->() { return m_ptr; }
-	ReferenceType operator*() { return *m_ptr; }
+	/* RELATIONAL OPERATORS */
 
 	bool operator==(const iterator& other) const
 	{
@@ -199,9 +209,6 @@ public:
 		return m_ptr < other.m_ptr;
 	}
 
-	/* Data */
-public:
-	PointerType m_ptr;
 };
 
 // Dynamic stack allocated vector
@@ -292,16 +299,35 @@ public:
 		std::swap(m_data, other.m_data);
 	}
 
+	template<typename... Args>
+	Iterator emplace(ConstIterator position, Args&&... args)
+	{
+		// Calculate the index based on the pointer difference
+		auto* loc = position.m_ptr;
+		size_t index = loc - m_data;
 
+		if (m_size >= m_capacity) {
+			this->_reallocate(m_capacity + (m_capacity / 2));
+		}
+		m_size++;
+
+		// Shift elements to make space for the new one
+		for (size_t i = m_size; i > index; --i)
+			m_data[i] = std::move(m_data[i - 1]);
+
+		m_data[index] = T(std::forward<Args>(args)...);
+
+		return Iterator(m_data + index);
+	}
 
 	template<typename... Args>
-	T& emplace_back(Args&&... args)
+	void emplace_back(Args&&... args)
 	{
 		if (m_size >= m_capacity)
 			this->_reallocate(m_capacity + (m_capacity / 2));
 
-		new(&m_data[m_size]) T(std::forward<Args>(args)...);;
-		return m_data[m_size++];
+		new(&m_data[m_size]) T(std::forward<Args>(args)...);
+		m_size++;
 	}
 
 	template <typename U = T, typename std::enable_if<std::is_same<U, bool>::value, int>::type = 0>
@@ -354,22 +380,42 @@ public:
 
 	Iterator begin()
 	{
-		return Iterator(m_data-1);
+		return Iterator(m_data);
 	}
 
 	Iterator end()
 	{
-		return Iterator(m_data + (m_size-1));
+		return Iterator(m_data + (m_size));
 	}
 
 	Iterator rbegin()
 	{
-		return Iterator(m_data + (m_size - 1));
+		return Iterator(m_data + (m_size));
 	}
 
 	Iterator rend()
 	{
-		return Iterator(m_data-1);
+		return Iterator(m_data);
+	}
+
+	ConstIterator begin() const
+	{
+		return ConstIterator(m_data);
+	}
+
+	ConstIterator end() const
+	{
+		return ConstIterator(m_data + (m_size));
+	}
+
+	ConstIterator rbegin() const
+	{
+		return ConstIterator(m_data + (m_size));
+	}
+
+	ConstIterator rend() const
+	{
+		return ConstIterator(m_data);
 	}
 
 	/*----------------------------------------------------------*/
@@ -452,19 +498,18 @@ private:
 	inline void stack_vector<T>::_reallocate(const size_t new_capacity)
 	{
 
-		T* new_data = static_cast<T*>(_malloca(new_capacity * sizeof(T)));
+		T* new_data = static_cast<T*>(_alloca(new_capacity * sizeof(T)));
 
 		if (new_capacity < m_size)
 			m_size = new_capacity;
 
 		for (size_t i = 0; i < m_size; i++)
-			new_data[i] = std::move(m_data[i]);
+			new (&new_data[i]) T(std::move(m_data[i]));
 
 		for (size_t i = 0; i < m_size; i++) {
 			m_data[i].~T();
 		}
 
-		_freea(m_data);
 		m_data = new_data;
 		m_capacity = new_capacity;
 	}
