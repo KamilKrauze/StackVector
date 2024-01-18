@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include "stack_vector.hpp"
 
@@ -61,29 +62,35 @@ void print(const stack_vector<float3>& vec) {
 
 int main() {
 
-	stack_vector<float3> foo;
-	foo.push_back(float3(1));
-	foo.push_back(float3( 1,2,3 ));
-	foo.emplace_back(float3(4.1f, 5.3f, 6.1f));
-	print(foo);
+	//stack_vector<float3> foo;
+	//foo.push_back(float3(1));
+	//foo.push_back(float3( 1,2,3 ));
+	//foo.emplace_back(float3(4.1f, 5.3f, 6.1f));
+	//print(foo);
 
-	stack_vector<float3> bar;
-	for (int i = 1; i < 3; i++) bar.push_back(float3((float)i));
-	print(bar);
-	
-	bar.swap(foo);
-	print(foo);
+	//stack_vector<float3> bar;
+	//for (int i = 1; i < 3; i++) bar.push_back(float3((float)i));
+	//print(bar);
+	//
+	//bar.swap(foo);
+	//print(foo);
 
-	stack_vector<bool> a = { true, false, true };
-	a.flip();
-	print(a);
+	//stack_vector<bool> a = { true, false, true };
+	//a.flip();
+	//print(a);
 
-	stack_vector<bool> b = { false, false, true };
-	b.flip();
-	print(b);
+	//stack_vector<bool> b = { false, false, true };
+	//b.flip();
+	//print(b);
 
-	a.swap(b);
-	print(b);
+	//a.swap(b);
+	//print(b);
+
+	stack_vector<int> glee = { 0,1,2,3,4,5,6,7,8,9 };
+	for (auto& var : glee)
+	{
+		std::cout << var << std::endl;
+	}
 
 	std::cin.get();
 
