@@ -44,8 +44,8 @@ void print(const stack_vector<T>& vec) {
 	std::cout << "Capacity: " << vec.capacity() << "\n";
 
 
-	for (size_t i = 0; i < vec.size(); i++) {
-		std::cout << vec[i] << std::endl;
+	for (auto& v : vec) {
+		std::cout << v << std::endl;
 	}
 	std::cout << "------------------------------" << std::endl;
 }
@@ -92,7 +92,7 @@ int main() {
 
 	glee.emplace(glee.begin() + 1, 100);
 	glee.emplace(glee.begin() + 4, 100);
-	glee.emplace(glee.begin()+9, 100);
+	glee.emplace(glee.begin() + 9, 100);
 	print(glee);
 
 	std::cin.get();
