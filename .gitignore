@@ -40,3 +40,4 @@ Makefile
 *.exe
 *.out
 *.app
+premake5
