@@ -31,9 +31,9 @@ struct float3
 
 	float3& operator=(float3&& other) {
 		std::cout << "Move on =\n";
-		x = other.x;
-		y = other.y;
-		z = other.z;
+		x = std::move(other.x);
+		y = std::move(other.y);
+		z = std::move(other.z);
 		return *this;
 	}
 };
@@ -62,40 +62,8 @@ void print(const stack_vector<float3>& vec) {
 
 int main() {
 
-	//stack_vector<float3> foo;
-	//foo.push_back(float3(1));
-	//foo.push_back(float3( 1,2,3 ));
-	//foo.emplace_back(float3(4.1f, 5.3f, 6.1f));
-	//print(foo);
-
-	//stack_vector<float3> bar;
-	//for (int i = 1; i < 3; i++) bar.push_back(float3((float)i));
-	//print(bar);
-	//
-	//bar.swap(foo);
-	//print(foo);
-
-	//stack_vector<bool> a = { true, false, true };
-	//a.flip();
-	//print(a);
-
-	//stack_vector<bool> b = { false, false, true };
-	//b.flip();
-	//print(b);
-
-	//a.swap(b);
-	//print(b);
-
-
-	stack_vector<int> glee = { 0,1,2,3,4,5,6,7,8,9 };
-	auto it = glee.begin().m_ptr;
-
-	glee.emplace(glee.begin() + 1, 100);
-	glee.emplace(glee.begin() + 4, 100);
-	glee.emplace(glee.begin() + 9, 100);
-	print(glee);
-
-	std::cin.get();
-
-	return 0;
+	stack_vector<float3> foo;
+	foo.assign(3, float3(100));
+	print(foo);
+	
 }
