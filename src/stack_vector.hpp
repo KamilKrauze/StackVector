@@ -1,13 +1,109 @@
 #ifndef STACK_VECTOR_H
 #define STACK_VECTOR_H
 
+#include <malloc.h>
 #include <initializer_list>
 #include <cassert>
+
+template<typename stack_vector>
+class iterator {
+public:
+	using ValueType = typename stack_vector::ValueType;
+	using PointerType = ValueType*;
+	using ReferenceType = ValueType&;
+public:
+	inline iterator(PointerType ptr) : m_ptr(ptr) {}
+
+	iterator& operator++()
+	{
+		m_ptr++;
+		return *this;
+	}
+
+	iterator operator++(int)
+	{
+		iterator temp = *this;
+		++(*this);
+		return iterator;
+	}
+
+	iterator& operator--()
+	{
+		m_ptr--;
+		return *this;
+	}
+
+	iterator operator--(int)
+	{
+		iterator temp = *this;
+		--(*this);
+		return iterator;
+	}
+
+	iterator& operator+=(const size_t val)
+	{
+		m_ptr += val;
+		return *this;
+	}
+
+	iterator& operator-=(const size_t val)
+	{
+		m_ptr -= val;
+		return *this;
+	}
+
+	//iterator operarator-(const size_t val)
+	//{
+	//	iterator temp = *this;
+	//	temp -= val;
+	//	return temp;
+	//}
+
+	ReferenceType operator[](const size_t index) { return *(m_ptr[index]); }
+	PointerType operator->() { return m_ptr; }
+	ReferenceType operator*() { return *m_ptr; }
+
+	bool operator==(const iterator& other) const
+	{
+		return m_ptr == other.m_ptr;
+	}
+
+	bool operator!=(const iterator& other) const
+	{
+		return !(*this == other);
+	}
+
+	bool operator>=(const iterator& other) const
+	{
+		return m_ptr >= other.m_ptr;
+	}
+
+	bool operator<=(const iterator& other) const
+	{
+		return m_ptr <= other.m_ptr;
+	}
+
+	bool operator>(const iterator& other) const
+	{
+		return m_ptr > other.m_ptr;
+	}
+
+	bool operator<(const iterator& other) const
+	{
+		return m_ptr < other.m_ptr;
+	}
+
+private:
+	PointerType m_ptr;
+};
 
 // Dynamic stack allocated vector
 template<typename T>
 class stack_vector
 {
+public:
+	using ValueType = T;
+	using Iterator = iterator<stack_vector<T>>;
 
 	/* Allocation / Deallocation */
 public:
@@ -143,6 +239,30 @@ public:
 	}
 
 	/*----------------------------------------------------------*/
+	/*						Iterators							*/
+	/*----------------------------------------------------------*/
+
+	Iterator begin()
+	{
+		return Iterator(m_data);
+	}
+
+	Iterator end()
+	{
+		return Iterator(m_data + m_size);
+	}
+
+	Iterator rbegin()
+	{
+		return Iterator(m_data + m_size);
+	}
+
+	Iterator rend()
+	{
+		return Iterator(m_data);
+	}
+
+	/*----------------------------------------------------------*/
 	/*						   Capacity						    */
 	/*----------------------------------------------------------*/
 
@@ -208,12 +328,12 @@ public:
 	stack_vector<T>& operator= (stack_vector<T>&& rhs);
 	
 	/* Relational */
-	bool operator== (const stack_vector<T> rhs);
-	bool operator!= (const stack_vector<T> rhs);
-	bool operator<  (const stack_vector<T> rhs);
-	bool operator<= (const stack_vector<T> rhs);
-	bool operator>  (const stack_vector<T> rhs);
-	bool operator>= (const stack_vector<T> rhs);
+	_NODISCARD bool operator== (const stack_vector<T> rhs);
+	_NODISCARD bool operator!= (const stack_vector<T> rhs);
+	_NODISCARD bool operator<  (const stack_vector<T> rhs);
+	_NODISCARD bool operator<= (const stack_vector<T> rhs);
+	_NODISCARD bool operator>  (const stack_vector<T> rhs);
+	_NODISCARD bool operator>= (const stack_vector<T> rhs);
 
 
 	/* Helper Functions */
@@ -221,6 +341,7 @@ private:
 
 	inline void stack_vector<T>::_reallocate(const size_t new_capacity)
 	{
+
 		T* new_data = static_cast<T*>(_malloca(new_capacity * sizeof(T)));
 
 		if (new_capacity < m_size)
