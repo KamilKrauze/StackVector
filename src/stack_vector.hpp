@@ -5,13 +5,119 @@
 #include <initializer_list>
 #include <cassert>
 
+// Constant iterator
 template<typename stack_vector>
-class iterator {
+class const_iterator {
+public:
+	using ValueType = typename stack_vector::ValueType;
+	using PointerType = ValueType*;
+	using ReferenceType = ValueType&;
+
+public:
+	inline const_iterator() noexcept : m_ptr() {}
+	inline const_iterator(PointerType ptr) noexcept : m_ptr(ptr) {}
+
+	_NODISCARD inline ReferenceType operator[](const size_t index) const noexcept { return *(m_ptr[index]); }
+	_NODISCARD inline PointerType operator->() const noexcept { return m_ptr; }
+	_NODISCARD inline ReferenceType operator*() const noexcept { return *m_ptr; }
+
+	/* Increment / Decrement */
+
+	inline const_iterator& operator++() noexcept
+	{
+		m_ptr++;
+		return *this;
+	}
+	inline const_iterator operator++(int) noexcept
+	{
+		iterator temp = *this;
+		++(*this);
+		return temp;
+	}
+	inline const_iterator& operator--() noexcept
+	{
+		m_ptr--;
+		return *this;
+	}
+	inline const_iterator operator--(int) noexcept
+	{
+		iterator temp = *this;
+		--(*this);
+		return temp;
+	}
+
+	/* Addition / Subtraction */
+
+	inline const_iterator& operator+=(const size_t val) noexcept
+	{
+		m_ptr += val;
+		return *this;
+	}
+
+	_NODISCARD inline const_iterator operator+(const size_t val) const noexcept {
+		const_iterator temp = *this;
+		_Tmp += val;
+		return _Tmp;
+	}
+
+	inline const_iterator& operator-=(const size_t val) noexcept
+	{
+		m_ptr -= val;
+		return *this;
+	}
+
+	_NODISCARD inline const_iterator operator-(const size_t val) const noexcept {
+		const_iterator temp = *this;
+		_Tmp -= val;
+		return _Tmp;
+	}
+
+	/* RELATIONAL OPERATORS */
+
+	bool operator==(const const_iterator& other) const
+	{
+		return m_ptr == other.m_ptr;
+	}
+
+	bool operator!=(const const_iterator& other) const
+	{
+		return !(*this == other);
+	}
+
+	bool operator>=(const const_iterator& other) const
+	{
+		return m_ptr >= other.m_ptr;
+	}
+
+	bool operator<=(const const_iterator& other) const
+	{
+		return m_ptr <= other.m_ptr;
+	}
+
+	bool operator>(const const_iterator& other) const
+	{
+		return m_ptr > other.m_ptr;
+	}
+
+	bool operator<(const const_iterator& other) const
+	{
+		return m_ptr < other.m_ptr;
+	}
+
+/* Data */
+public:
+	PointerType m_ptr;
+};
+
+// Regular iterator
+template<typename stack_vector>
+class iterator : public const_iterator<stack_vector> {
 public:
 	using ValueType = typename stack_vector::ValueType;
 	using PointerType = ValueType*;
 	using ReferenceType = ValueType&;
 public:
+	inline iterator() : m_ptr() {}
 	inline iterator(PointerType ptr) : m_ptr(ptr) {}
 
 	iterator& operator++()
@@ -24,7 +130,7 @@ public:
 	{
 		iterator temp = *this;
 		++(*this);
-		return iterator;
+		return temp;
 	}
 
 	iterator& operator--()
@@ -37,7 +143,7 @@ public:
 	{
 		iterator temp = *this;
 		--(*this);
-		return iterator;
+		return temp;
 	}
 
 	iterator& operator+=(const size_t val)
@@ -93,7 +199,8 @@ public:
 		return m_ptr < other.m_ptr;
 	}
 
-private:
+	/* Data */
+public:
 	PointerType m_ptr;
 };
 
@@ -104,6 +211,7 @@ class stack_vector
 public:
 	using ValueType = T;
 	using Iterator = iterator<stack_vector<T>>;
+	using ConstIterator = const_iterator<stack_vector<T>>;
 
 	/* Allocation / Deallocation */
 public:
@@ -184,6 +292,8 @@ public:
 		std::swap(m_data, other.m_data);
 	}
 
+
+
 	template<typename... Args>
 	T& emplace_back(Args&&... args)
 	{
@@ -244,22 +354,22 @@ public:
 
 	Iterator begin()
 	{
-		return Iterator(m_data);
+		return Iterator(m_data-1);
 	}
 
 	Iterator end()
 	{
-		return Iterator(m_data + m_size);
+		return Iterator(m_data + (m_size-1));
 	}
 
 	Iterator rbegin()
 	{
-		return Iterator(m_data + m_size);
+		return Iterator(m_data + (m_size - 1));
 	}
 
 	Iterator rend()
 	{
-		return Iterator(m_data);
+		return Iterator(m_data-1);
 	}
 
 	/*----------------------------------------------------------*/
