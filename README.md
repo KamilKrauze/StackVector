@@ -27,7 +27,7 @@ Otherwise use the CLI at the project working directory like so:
 > #### Configure
 > > Windows
 > > ```bat
-> > cd build; cmake -G "Visual Studio 17 2022" ..; cd..
+> > cd build; cmake -G "Visual Studio 17 2022" ..; cd ..
 > > ```
 >
 > > Linux
