@@ -236,8 +236,8 @@ namespace sad {
 	{
 	public:
 		using ValueType = T;
-		using iterator = class iterator<stack_vector<T>>;
-		using const_iterator = class const_iterator<stack_vector<T>>;
+		using iterator = iterator<stack_vector<T>>;
+		using const_iterator = const_iterator<stack_vector<T>>;
 
 		/* Allocation / Deallocation */
 	public:

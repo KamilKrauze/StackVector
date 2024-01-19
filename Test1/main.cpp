@@ -2,7 +2,7 @@
 #include <string>
 #include <vector>
 
-#include "stack_vector.hpp"
+#include <stack_vector.hpp>
 
 struct float3
 {
@@ -10,7 +10,7 @@ struct float3
 	float3() {}
 	float3(float scalar) : x(scalar), y(scalar), z(scalar) {}
 	float3(float x, float y, float z) : x(x), y(y), z(z) {}
-
+	
 	float3(const float3& other) : x(other.x), y(other.y), z(other.z) {
 		std::cout << "Copy\n";
 	}

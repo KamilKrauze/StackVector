@@ -3,10 +3,11 @@
 /src/obj/
 /bin/
 
-# Project files
+# Project files and directories
 *.vcxproj*
 Makefile
 *.sln
+/CMake/
 
 # Prerequisites
 *.d
