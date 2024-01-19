@@ -236,8 +236,18 @@ namespace sad {
 	{
 	public:
 		using ValueType = T;
-		using iterator = iterator<stack_vector<T>>;
-		using const_iterator = const_iterator<stack_vector<T>>;
+		#if _WIN32 // Windows
+			using iterator = iterator<stack_vector<T>>;
+			using const_iterator = const_iterator<stack_vector<T>>;
+
+		#elif defined(__linux__) // Or #if __linux__
+			using iterator = class iterator<stack_vector<T>>;
+			using const_iterator = class const_iterator<stack_vector<T>>;
+
+		#elif defined(__APPLE__) // Or #if _APPLE_
+			using iterator = class iterator<stack_vector<T>>;
+			using const_iterator = class const_iterator<stack_vector<T>>;
+		#endif
 
 		/* Allocation / Deallocation */
 	public:
