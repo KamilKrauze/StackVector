@@ -27,11 +27,11 @@ Otherwise use the CLI at the project working directory like so:
 > #### Configure
 > > Windows
 > > ```bat
-> > cd build; cmake -G "Visual Studio 17 2022" .. cd..
+> > cd build; cmake -G "Visual Studio 17 2022" ..; cd..
 > > ```
 >
 > > Linux
-> > ```bat
+> > ```bash
 > > cd build; cmake -G "Unix Makefiles" ..; cd ..
 > > ```
 >
@@ -42,7 +42,7 @@ Otherwise use the CLI at the project working directory like so:
 > > ```
 >
 > > Release
-> > ```bat
+> > ```bash
 > > cmake --build . --config Release
 > > ```
 > <br>
