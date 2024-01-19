@@ -20,13 +20,13 @@ project "StackVector"
 
     filter "system:windows"
         system "windows"
-        cppdialect "C++17"
+        cppdialect "C++11"
         systemversion "latest"
 
 -- Linux system
     filter "system:linux"
         system "linux"
-        cppdialect "gnu++17"
+        cppdialect "gnu++11"
 
 -- Build configurations
     filter "configurations:Debug"
