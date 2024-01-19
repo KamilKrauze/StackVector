@@ -1,225 +1,243 @@
 #ifndef STACK_VECTOR_H
 #define STACK_VECTOR_H
 
+#if _WIN32 // Windows
+	#include <malloc.h>
+
+#elif defined(__linux__) // Or #if __linux__
+  #define _NODISCARD [[nodiscard]]
+  #include <limits>
+
+#elif defined(__APPLE__) // Or #if _APPLE_
+	#define _NODISCARD [[nodiscard]]
+	#include <limits>
+#endif
+
 #include <initializer_list>
 #include <cassert>
 
-// Constant iterator
-template<typename stack_vector>
-class const_iterator {
-public:
-	using ValueType = typename stack_vector::ValueType;
-	using PointerType = ValueType*;
-	using ReferenceType = ValueType&;
-
-public:
-	inline const_iterator() noexcept : m_ptr() {}
-	inline const_iterator(PointerType ptr) noexcept : m_ptr(ptr) { }
-
-	_NODISCARD inline ReferenceType operator[](const size_t index) const noexcept { return *(m_ptr[index]); }
-	_NODISCARD inline PointerType operator->() const noexcept { return m_ptr; }
-	_NODISCARD inline ReferenceType operator*() const noexcept { return *m_ptr; }
-
-	/* Increment / Decrement */
-
-	inline const_iterator& operator++() noexcept
-	{
-		m_ptr++;
-		return *this;
-	}
-	inline const_iterator operator++(int) noexcept
-	{
-		const_iterator temp = *this;
-		++(*this);
-		return temp;
-	}
-	inline const_iterator& operator--() noexcept
-	{
-		m_ptr--;
-		return *this;
-	}
-	inline const_iterator operator--(int) noexcept
-	{
-		const_iterator temp = *this;
-		--(*this);
-		return temp;
-	}
-
-	/* Addition / Subtraction */
-
-	inline const_iterator& operator+=(const size_t val) noexcept
-	{
-		m_ptr += val;
-		return *this;
-	}
-
-	_NODISCARD inline const_iterator operator+(const size_t val) const noexcept {
-		const_iterator temp = *this;
-		temp += val;
-		return temp;
-	}
-
-	inline const_iterator& operator-=(const size_t val) noexcept
-	{
-		m_ptr -= val;
-		return *this;
-	}
-
-	_NODISCARD inline const_iterator operator-(const size_t val) const noexcept {
-		const_iterator temp = *this;
-		temp -= val;
-		return temp;
-	}
-
-	/* RELATIONAL OPERATORS */
-
-	bool operator==(const const_iterator& other) const noexcept
-	{
-		return m_ptr == other.m_ptr;
-	}
-
-	bool operator!=(const const_iterator& other) const noexcept
-	{
-		return !(*this == other);
-	}
-
-	bool operator>=(const const_iterator& other) const noexcept
-	{
-		return m_ptr >= other.m_ptr;
-	}
-
-	bool operator<=(const const_iterator& other) const noexcept
-	{
-		return m_ptr <= other.m_ptr;
-	}
-
-	bool operator>(const const_iterator& other) const noexcept
-	{
-		return m_ptr > other.m_ptr;
-	}
-
-	bool operator<(const const_iterator& other) const noexcept
-	{
-		return m_ptr < other.m_ptr;
-	}
-
-/* Data */
-public:
-	PointerType m_ptr;
-}; // !iterator<stack_vector<T>> class
-
-
-// Regular iterator
-template<typename stack_vector>
-class iterator : public const_iterator<stack_vector> {
-public:
-	using ValueType = typename stack_vector::ValueType;
-	using PointerType = ValueType*;
-	using ReferenceType = ValueType&;
-public:
-	iterator() { m_ptr = nullptr; }
-	iterator(PointerType ptr) { this->m_ptr = ptr; }
-
-	ReferenceType operator[](const size_t index) const noexcept { return *(m_ptr[index]); }
-	PointerType operator->() { return m_ptr; }
-	ReferenceType operator*() { return *m_ptr; }
-
-	/* Addition / Subtraction */
-
-	inline iterator& operator++() noexcept
-	{
-		m_ptr++;
-		return *this;
-	}
-
-	inline iterator operator++(int) noexcept
-	{
-		iterator temp = *this;
-		++(*this);
-		return temp;
-	}
-
-	inline iterator& operator--() noexcept
-	{
-		m_ptr--;
-		return *this;
-	}
-
-	inline iterator operator--(int) noexcept
-	{
-		iterator temp = *this;
-		--(*this);
-		return temp;
-	}
-
-	inline iterator& operator+=(const size_t val) noexcept
-	{
-		m_ptr += val;
-		return *this;
-	}
-
-	_NODISCARD inline iterator& operator+(const size_t val) const noexcept
-	{
-		iterator temp = *this;
-		temp += val;
-		return temp;
-	}
-
-	inline iterator& operator-=(const size_t val)
-	{
-		m_ptr -= val;
-		return *this;
-	}
-
-	_NODISCARD inline iterator& operator-(const size_t val) const noexcept
-	{
-		iterator temp = *this;
-		temp -= val;
-		return temp;
-	}
-
-	/* RELATIONAL OPERATORS */
-
-	bool operator==(const iterator& other) const
-	{
-		return m_ptr == other.m_ptr;
-	}
-
-	bool operator!=(const iterator& other) const
-	{
-		return !(*this == other);
-	}
-
-	bool operator>=(const iterator& other) const
-	{
-		return m_ptr >= other.m_ptr;
-	}
-
-	bool operator<=(const iterator& other) const
-	{
-		return m_ptr <= other.m_ptr;
-	}
-
-	bool operator>(const iterator& other) const
-	{
-		return m_ptr > other.m_ptr;
-	}
-
-	bool operator<(const iterator& other) const
-	{
-		return m_ptr < other.m_ptr;
-	}
-
-}; // !iterator<stack_vector<T>> class
+// Stack Allocated Data
 namespace sad {
+
+	// Constant iterator
+	template<typename stack_vector>
+	class const_iterator {
+	public:
+		using ValueType = typename stack_vector::ValueType;
+		using PointerType = ValueType*;
+		using ReferenceType = ValueType&;
+
+	public:
+		inline const_iterator() noexcept : m_ptr() {}
+		inline const_iterator(PointerType ptr) noexcept : m_ptr(ptr) { }
+
+		_NODISCARD inline ReferenceType operator[](const size_t index) const noexcept { return *(m_ptr[index]); }
+		_NODISCARD inline PointerType operator->() const noexcept { return m_ptr; }
+		_NODISCARD inline ReferenceType operator*() const noexcept { return *m_ptr; }
+
+		/* Increment / Decrement */
+
+		inline const_iterator& operator++() noexcept
+		{
+			m_ptr++;
+			return *this;
+		}
+		inline const_iterator operator++(int) noexcept
+		{
+			const_iterator temp = *this;
+			++(*this);
+			return temp;
+		}
+		inline const_iterator& operator--() noexcept
+		{
+			m_ptr--;
+			return *this;
+		}
+		inline const_iterator operator--(int) noexcept
+		{
+			const_iterator temp = *this;
+			--(*this);
+			return temp;
+		}
+
+		/* Addition / Subtraction */
+
+		inline const_iterator& operator+=(const size_t val) noexcept
+		{
+			m_ptr += val;
+			return *this;
+		}
+
+		_NODISCARD inline const_iterator operator+(const size_t val) const noexcept
+		{
+			const_iterator temp = *this;
+			temp += val;
+			return temp;
+		}
+
+		inline const_iterator& operator-=(const size_t val) noexcept
+		{
+			m_ptr -= val;
+			return *this;
+		}
+
+		_NODISCARD inline const_iterator operator-(const size_t val) const noexcept
+		{
+			const_iterator temp = *this;
+			temp -= val;
+			return temp;
+		}
+
+		/* RELATIONAL OPERATORS */
+
+		bool operator==(const const_iterator& other) const noexcept
+		{
+			return m_ptr == other.m_ptr;
+		}
+
+		bool operator!=(const const_iterator& other) const noexcept
+		{
+			return !(*this == other);
+		}
+
+		bool operator>=(const const_iterator& other) const noexcept
+		{
+			return m_ptr >= other.m_ptr;
+		}
+
+		bool operator<=(const const_iterator& other) const noexcept
+		{
+			return m_ptr <= other.m_ptr;
+		}
+
+		bool operator>(const const_iterator& other) const noexcept
+		{
+			return m_ptr > other.m_ptr;
+		}
+
+		bool operator<(const const_iterator& other) const noexcept
+		{
+			return m_ptr < other.m_ptr;
+		}
+
+	/* Data */
+	public:
+		PointerType m_ptr;
+	}; // !iterator<stack_vector<T>> class
+
+
+	// Regular iterator
+	template<typename stack_vector>
+	class iterator : public const_iterator<stack_vector> {
+	public:
+		using ValueType = typename stack_vector::ValueType;
+		using PointerType = ValueType*;
+		using ReferenceType = ValueType&;
+	public:
+		iterator() { this->m_ptr = nullptr; }
+		iterator(PointerType ptr) { this->m_ptr = ptr; }
+
+		ReferenceType operator[](const size_t index) const noexcept { return *(this->m_ptr[index]); }
+		PointerType operator->() { return this->m_ptr; }
+		ReferenceType operator*() { return *this->m_ptr; }
+
+		/* Addition / Subtraction */
+
+		inline iterator& operator++() noexcept
+		{
+			this->m_ptr++;
+			return *this;
+		}
+
+		inline iterator operator++(int) noexcept
+		{
+			iterator temp = *this;
+			++(*this);
+			return temp;
+		}
+
+		inline iterator& operator--() noexcept
+		{
+			this->m_ptr--;
+			return *this;
+		}
+
+		inline iterator operator--(int) noexcept
+		{
+			iterator temp = *this;
+			--(*this);
+			return temp;
+		}
+
+		inline iterator& operator+=(const size_t val) noexcept
+		{
+			this->m_ptr += val;
+			return *this;
+		}
+
+		_NODISCARD inline iterator& operator+(const size_t val) const noexcept
+		{
+			iterator temp = *this;
+			temp += val;
+			return temp;
+		}
+
+		inline iterator& operator-=(const size_t val)
+		{
+			this->m_ptr -= val;
+			return *this;
+		}
+
+		_NODISCARD inline iterator& operator-(const size_t val) const noexcept
+		{
+			iterator temp = *this;
+			temp -= val;
+			return temp;
+		}
+
+		/* RELATIONAL OPERATORS */
+
+		bool operator==(const iterator& other) const
+		{
+			return this->m_ptr == other.m_ptr;
+		}
+
+		bool operator!=(const iterator& other) const
+		{
+			return !(*this == other);
+		}
+
+		bool operator>=(const iterator& other) const
+		{
+			return this->m_ptr >= other.m_ptr;
+		}
+
+		bool operator<=(const iterator& other) const
+		{
+			return this->m_ptr <= other.m_ptr;
+		}
+
+		bool operator>(const iterator& other) const
+		{
+			return this->m_ptr > other.m_ptr;
+		}
+
+		bool operator<(const iterator& other) const
+		{
+			return this->m_ptr < other.m_ptr;
+		}
+
+	}; // !iterator<stack_vector<T>> class
+
+
 	// Dynamic stack allocated vector
 	template<typename T>
 	class stack_vector
 	{
 	public:
 		using ValueType = T;
-		using iterator = iterator<stack_vector<T>>;
-		using const_iterator = const_iterator<stack_vector<T>>;
+		using iterator = class iterator<stack_vector<T>>;
+		using const_iterator = class const_iterator<stack_vector<T>>;
 
 		/* Allocation / Deallocation */
 	public:
@@ -236,17 +254,8 @@ namespace sad {
 			this->_reallocate(size);
 		}
 
-		// Initializer constructor
-		inline stack_vector(std::initializer_list<T> init_list)
-		{
-			const size_t new_size = init_list.size();
-			this->_reallocate(new_size);
-			std::copy(init_list.begin(), init_list.end(), m_data);
-			m_size = new_size;
-		}
-
 		// Copy constructor
-		inline stack_vector(const stack_vector<T>& vec)
+		inline stack_vector(const stack_vector<T>& vec) noexcept
 		{
 			const size_t new_size = vec.size();
 			this->_reallocate(vec.capacity());
@@ -254,7 +263,7 @@ namespace sad {
 			for (size_t i = 0; i < new_size; i++)
 				m_data[i] = vec.m_data[i];
 
-			m_size = new_size;
+			this->m_size = new_size;
 		}
 
 		// Move constructor
@@ -274,18 +283,14 @@ namespace sad {
 		{
 			size_t size = last.m_ptr - first.m_ptr;
 			this->_reallocate(size);
-			m_size = size;
-			std::copy(first.m_ptr, last.m_ptr, m_data);
+			this->m_size = size;
+			std::copy(first.m_ptr, last.m_ptr, this->m_data);
 		}
 
 		// DESTROY!
 		~stack_vector()
 		{
 			this->clear();
-
-			_freea(m_data);
-			m_size = NULL;
-			m_capacity = NULL;
 		}
 
 	public:
@@ -708,29 +713,29 @@ namespace sad {
 		/*----------------------------------------------------------*/
 
 		// Get amount of elements.
-		_NODISCARD inline size_t size() const noexcept { return m_size; }
+		_NODISCARD inline size_t size() const noexcept { return this->m_size; }
 
 		_NODISCARD inline size_t max_size() const noexcept { return std::numeric_limits<size_t>::max() / sizeof(T); }
 
 		// Get amount of elements that can fit.
-		size_t capacity() const noexcept { return m_capacity; }
+		size_t capacity() const noexcept { return this->m_capacity; }
 
 		// Destroy vector contents
 		inline void clear() noexcept
 		{
 			for (size_t i = 0; i < m_size; i++)
-				m_data[i].~T();
-			m_size = 0;
+				this->m_data[i].~T();
+			this->m_size = 0;
 		}
 
 		// Change size
 		inline void resize(size_t size, T value = T())
 		{
-			_reallocate(size);
+			this->_reallocate(size);
 			for (size_t i = m_size; i < size; i++)
-				m_data[i] = value;
+				this->m_data[i] = value;
 
-			m_size = size;
+			this->m_size = size;
 		}
 
 		// Reserve some n-th space, resize array if needed.
@@ -740,11 +745,11 @@ namespace sad {
 			(new_capacity > m_capacity) ? (m_capacity = new_capacity) : (resize = true);
 
 			if (resize)
-				_reallocate(m_capacity);
+				this->_reallocate(m_capacity);
 		}
 
 		// Check if empty
-		_NODISCARD_EMPTY_MEMBER inline bool empty() const { return (this->m_size == 0); }
+		_NODISCARD inline bool empty() const { return (this->m_size == 0); }
 
 		void shrink_to_fit() { m_capacity = m_size; }
 
@@ -881,24 +886,33 @@ namespace sad {
 		/* Helper Functions */
 	private:
 
-		inline void stack_vector<T>::_reallocate(const size_t new_capacity)
+		// Reallocate stack memory to accomodate for new size.
+		inline void _reallocate(const size_t new_capacity)
 		{
 
-			T* new_data = static_cast<T*>(_alloca(new_capacity * sizeof(T)));
-			//T* new_data = new T[new_capacity * sizeof(T)];
+			
 
-			if (new_capacity < m_size)
-				m_size = new_capacity;
+			#if _WIN32
+				T* new_data = static_cast<T*>(_alloca(new_capacity * sizeof(T)));
+			#elif defined(__linux__) // Or #if __linux__
+				T* new_data = static_cast<T*>(alloca(new_capacity * sizeof(T)));
+			#elif defined(__APPLE__) // Or #if MacOS
+				T* new_data = static_cast<T*>(alloca(new_capacity * sizeof(T)));
+			#endif
+
+
+			if (new_capacity < this->m_size)
+				this->m_size = new_capacity;
 
 			for (size_t i = 0; i < m_size; i++)
 				new (&new_data[i]) T(std::move(m_data[i]));
 
 			for (size_t i = 0; i < m_size; i++) {
-				m_data[i].~T();
+				this->m_data[i].~T();
 			}
 
-			m_data = new_data;
-			m_capacity = new_capacity;
+			this->m_data = new_data;
+			this->m_capacity = new_capacity;
 		}
 
 
